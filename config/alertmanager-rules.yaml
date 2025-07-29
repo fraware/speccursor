@@ -1,0 +1,538 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: speccursor-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: speccursor
+    app.kubernetes.io/part-of: speccursor
+spec:
+  groups:
+    - name: speccursor.rules
+      rules:
+        # Upgrade Failure Rate Alert
+        - alert: UpgradeFailureRateHigh
+          expr: |
+            (
+              rate(speccursor_upgrade_failure_total[5m]) /
+              rate(speccursor_upgrade_attempts_total[5m])
+            ) > (
+              avg_over_time(
+                rate(speccursor_upgrade_failure_total[7d]) /
+                rate(speccursor_upgrade_attempts_total[7d])
+              )[1h]
+            ) * 1.5
+          for: 5m
+          labels:
+            severity: warning
+            team: speccursor
+          annotations:
+            summary: "Upgrade failure rate is {{ $value | humanizePercentage }} above 7-day average"
+            description: "Upgrade failure rate is {{ $value | humanizePercentage }} above the 7-day average. Check recent upgrades for patterns."
+
+        # AI Patch Generation Failure
+        - alert: AIPatchGenerationFailure
+          expr: |
+            rate(speccursor_ai_patch_failure_total[5m]) /
+            rate(speccursor_ai_patch_attempts_total[5m]) > 0.3
+          for: 5m
+          labels:
+            severity: warning
+            team: speccursor
+          annotations:
+            summary: "AI patch generation failure rate is {{ $value | humanizePercentage }}"
+            description: "AI patch generation is failing at {{ $value | humanizePercentage }} rate. Check Claude API status and token limits."
+
+        # Proof Verification Failure
+        - alert: ProofVerificationFailure
+          expr: |
+            rate(speccursor_proof_failure_total[5m]) /
+            rate(speccursor_proof_attempts_total[5m]) > 0.2
+          for: 5m
+          labels:
+            severity: warning
+            team: speccursor
+          annotations:
+            summary: "Proof verification failure rate is {{ $value | humanizePercentage }}"
+            description: "Lean proof verification is failing at {{ $value | humanizePercentage }} rate. Check Lean engine and theorem complexity."
+
+        # High Response Time
+        - alert: HighResponseTime
+          expr: |
+            histogram_quantile(0.95,
+              rate(speccursor_http_request_duration_seconds_bucket[5m])
+            ) > 30
+          for: 5m
+          labels:
+            severity: warning
+            team: speccursor
+          annotations:
+            summary: "P95 response time is {{ $value }}s"
+            description: "95th percentile response time is {{ $value }}s, which is above the 30s threshold."
+
+        # Service Down
+        - alert: ServiceDown
+          expr: up{job="speccursor-services"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            team: speccursor
+          annotations:
+            summary: "Service {{ $labels.instance }} is down"
+            description: "Service {{ $labels.instance }} has been down for more than 1 minute."
+
+        # High CPU Usage
+        - alert: HighCPUUsage
+          expr: |
+            (
+              rate(container_cpu_usage_seconds_total{container!=""}[5m]) /
+              container_spec_cpu_quota{container!=""} * 100
+            ) > 80
+          for: 5m
+          labels:
+            severity: warning
+            team: speccursor
+          annotations:
+            summary: "CPU usage is {{ $value }}% for {{ $labels.container }}"
+            description: "Container {{ $labels.container }} is using {{ $value }}% CPU, which is above the 80% threshold."
+
+        # High Memory Usage
+        - alert: HighMemoryUsage
+          expr: |
+            (
+              container_memory_usage_bytes{container!=""} /
+              container_spec_memory_limit_bytes{container!=""} * 100
+            ) > 85
+          for: 5m
+          labels:
+            severity: warning
+            team: speccursor
+          annotations:
+            summary: "Memory usage is {{ $value }}% for {{ $labels.container }}"
+            description: "Container {{ $labels.container }} is using {{ $value }}% memory, which is above the 85% threshold."
+
+        # High Disk Usage
+        - alert: HighDiskUsage
+          expr: |
+            (
+              node_filesystem_avail_bytes{mountpoint="/"} /
+              node_filesystem_size_bytes{mountpoint="/"} * 100
+            ) < 10
+          for: 5m
+          labels:
+            severity: warning
+            team: speccursor
+          annotations:
+            summary: "Disk usage is {{ $value }}% available"
+            description: "Only {{ $value }}% disk space is available, which is below the 10% threshold."
+
+        # Database Connection Pool Exhausted
+        - alert: DatabaseConnectionPoolExhausted
+          expr: speccursor_database_connections_active / speccursor_database_connections_max > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            team: speccursor
+          annotations:
+            summary: "Database connection pool is {{ $value | humanizePercentage }} full"
+            description: "Database connection pool is {{ $value | humanizePercentage }} full, which may cause connection timeouts."
+
+        # Redis Memory Usage High
+        - alert: RedisMemoryUsageHigh
+          expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 80
+          for: 5m
+          labels:
+            severity: warning
+            team: speccursor
+          annotations:
+            summary: "Redis memory usage is {{ $value }}%"
+            description: "Redis is using {{ $value }}% of available memory, which is above the 80% threshold."
+
+        # Security Alerts
+        - alert: WebhookSignatureFailures
+          expr: rate(speccursor_webhook_signature_failures_total[5m]) > 0.1
+          for: 2m
+          labels:
+            severity: critical
+            team: speccursor
+          annotations:
+            summary: "Webhook signature failures detected"
+            description: "{{ $value }} webhook signature failures per second detected. Possible security breach."
+
+        - alert: APIAuthenticationFailures
+          expr: rate(speccursor_api_auth_failures_total[5m]) > 1
+          for: 2m
+          labels:
+            severity: critical
+            team: speccursor
+          annotations:
+            summary: "API authentication failures detected"
+            description: "{{ $value }} API authentication failures per second detected. Possible brute force attack."
+
+        - alert: SuspiciousActivity
+          expr: rate(speccursor_suspicious_activity_total[5m]) > 0
+          for: 1m
+          labels:
+            severity: critical
+            team: speccursor
+          annotations:
+            summary: "Suspicious activity detected"
+            description: "{{ $value }} suspicious activities per second detected. Immediate investigation required."
+
+        # Business Metrics Alerts
+        - alert: HighTokenUsage
+          expr: rate(speccursor_ai_tokens_total[5m]) > 1000
+          for: 5m
+          labels:
+            severity: warning
+            team: speccursor
+          annotations:
+            summary: "High Claude API token usage"
+            description: "Using {{ $value }} tokens per second, which is above the 1000 tokens/s threshold."
+
+        - alert: UpgradeQueueBacklog
+          expr: speccursor_upgrade_queue_length > 100
+          for: 5m
+          labels:
+            severity: warning
+            team: speccursor
+          annotations:
+            summary: "Upgrade queue backlog detected"
+            description: "{{ $value }} upgrades are queued, which is above the 100 threshold."
+
+        # Infrastructure Alerts
+        - alert: PodRestarting
+          expr: increase(kube_pod_container_status_restarts_total[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            team: speccursor
+          annotations:
+            summary: "Pod {{ $labels.pod }} is restarting"
+            description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last 15 minutes."
+
+        - alert: NodeNotReady
+          expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            team: speccursor
+          annotations:
+            summary: "Node {{ $labels.node }} is not ready"
+            description: "Node {{ $labels.node }} has been not ready for more than 5 minutes."
+
+        # External Dependency Alerts
+        - alert: GitHubAPIDown
+          expr: up{job="blackbox",instance="https://github.com"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            team: speccursor
+          annotations:
+            summary: "GitHub API is down"
+            description: "GitHub API is not responding. This will affect webhook processing."
+
+        - alert: ClaudeAPIDown
+          expr: up{job="blackbox",instance="https://api.anthropic.com"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            team: speccursor
+          annotations:
+            summary: "Claude API is down"
+            description: "Claude API is not responding. This will affect AI patch generation."
+
+        - alert: MorphAPIDown
+          expr: up{job="blackbox",instance="https://api.morph.dev"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            team: speccursor
+          annotations:
+            summary: "Morph API is down"
+            description: "Morph API is not responding. This will affect patch application."
+
+---
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: speccursor-alertmanager-config
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: speccursor
+    app.kubernetes.io/part-of: speccursor
+spec:
+  route:
+    group_by: ['alertname', 'service', 'component']
+    group_wait: 10s
+    group_interval: 10s
+    repeat_interval: 1h
+    receiver: 'slack-notifications'
+    routes:
+      - match:
+          severity: critical
+        receiver: 'slack-critical'
+        continue: true
+      - match:
+          severity: warning
+        receiver: 'slack-warning'
+        continue: true
+      - match:
+          component: security
+        receiver: 'security-team'
+        continue: true
+      - match:
+          component: database
+        receiver: 'database-team'
+        continue: true
+      - match:
+          component: monitoring
+        receiver: 'ops-team'
+        continue: true
+  
+  receivers:
+    - name: 'slack-notifications'
+      slack_configs:
+        - api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK'
+          channel: '#speccursor-alerts'
+          title: 'SpecCursor Alert'
+          text: |
+            {{ range .Alerts }}
+            *Alert:* {{ .Annotations.summary }}
+            *Description:* {{ .Annotations.description }}
+            *Severity:* {{ .Labels.severity }}
+            *Service:* {{ .Labels.service }}
+            *Component:* {{ .Labels.component }}
+            *Runbook:* {{ .Annotations.runbook_url }}
+            {{ end }}
+          send_resolved: true
+          actions:
+            - type: button
+              text: 'View Runbook'
+              url: '{{ .Annotations.runbook_url }}'
+    
+    - name: 'slack-critical'
+      slack_configs:
+        - api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK'
+          channel: '#speccursor-critical'
+          title: '🚨 CRITICAL: SpecCursor Alert'
+          text: |
+            {{ range .Alerts }}
+            *CRITICAL ALERT:* {{ .Annotations.summary }}
+            *Description:* {{ .Annotations.description }}
+            *Service:* {{ .Labels.service }}
+            *Component:* {{ .Labels.component }}
+            *Runbook:* {{ .Annotations.runbook_url }}
+            {{ end }}
+          send_resolved: true
+          actions:
+            - type: button
+              text: 'View Runbook'
+              url: '{{ .Annotations.runbook_url }}'
+    
+    - name: 'slack-warning'
+      slack_configs:
+        - api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK'
+          channel: '#speccursor-warnings'
+          title: '⚠️ WARNING: SpecCursor Alert'
+          text: |
+            {{ range .Alerts }}
+            *WARNING:* {{ .Annotations.summary }}
+            *Description:* {{ .Annotations.description }}
+            *Service:* {{ .Labels.service }}
+            *Component:* {{ .Labels.component }}
+            *Runbook:* {{ .Annotations.runbook_url }}
+            {{ end }}
+          send_resolved: true
+          actions:
+            - type: button
+              text: 'View Runbook'
+              url: '{{ .Annotations.runbook_url }}'
+    
+    - name: 'security-team'
+      slack_configs:
+        - api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK'
+          channel: '#speccursor-security'
+          title: '🔒 SECURITY: SpecCursor Alert'
+          text: |
+            {{ range .Alerts }}
+            *SECURITY ALERT:* {{ .Annotations.summary }}
+            *Description:* {{ .Annotations.description }}
+            *Severity:* {{ .Labels.severity }}
+            *Service:* {{ .Labels.service }}
+            *Runbook:* {{ .Annotations.runbook_url }}
+            {{ end }}
+          send_resolved: true
+          actions:
+            - type: button
+              text: 'View Runbook'
+              url: '{{ .Annotations.runbook_url }}'
+    
+    - name: 'database-team'
+      slack_configs:
+        - api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK'
+          channel: '#speccursor-database'
+          title: '🗄️ DATABASE: SpecCursor Alert'
+          text: |
+            {{ range .Alerts }}
+            *DATABASE ALERT:* {{ .Annotations.summary }}
+            *Description:* {{ .Annotations.description }}
+            *Severity:* {{ .Labels.severity }}
+            *Service:* {{ .Labels.service }}
+            *Runbook:* {{ .Annotations.runbook_url }}
+            {{ end }}
+          send_resolved: true
+          actions:
+            - type: button
+              text: 'View Runbook'
+              url: '{{ .Annotations.runbook_url }}'
+    
+    - name: 'ops-team'
+      slack_configs:
+        - api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK'
+          channel: '#speccursor-ops'
+          title: '⚙️ OPS: SpecCursor Alert'
+          text: |
+            {{ range .Alerts }}
+            *OPS ALERT:* {{ .Annotations.summary }}
+            *Description:* {{ .Annotations.description }}
+            *Severity:* {{ .Labels.severity }}
+            *Service:* {{ .Labels.service }}
+            *Runbook:* {{ .Annotations.runbook_url }}
+            {{ end }}
+          send_resolved: true
+          actions:
+            - type: button
+              text: 'View Runbook'
+              url: '{{ .Annotations.runbook_url }}'
+    
+    - name: 'email-notifications'
+      email_configs:
+        - to: 'speccursor-alerts@company.com'
+          from: 'alertmanager@speccursor.com'
+          smarthost: 'smtp.company.com:587'
+          auth_username: 'alertmanager@speccursor.com'
+          auth_password: 'YOUR_SMTP_PASSWORD'
+          headers:
+            subject: 'SpecCursor Alert'
+          html: |
+            <h2>SpecCursor Alert</h2>
+            {{ range .Alerts }}
+            <h3>{{ .Annotations.summary }}</h3>
+            <p><strong>Description:</strong> {{ .Annotations.description }}</p>
+            <p><strong>Severity:</strong> {{ .Labels.severity }}</p>
+            <p><strong>Service:</strong> {{ .Labels.service }}</p>
+            <p><strong>Component:</strong> {{ .Labels.component }}</p>
+            <p><a href="{{ .Annotations.runbook_url }}">View Runbook</a></p>
+            {{ end }}
+          send_resolved: true
+    
+    - name: 'pager-duty'
+      pagerduty_configs:
+        - service_key: 'YOUR_PAGERDUTY_SERVICE_KEY'
+          description: 'SpecCursor Alert'
+          client: 'SpecCursor Alertmanager'
+          client_url: 'https://github.com/speccursor/docs/blob/main/runbooks/'
+          severity: '{{ .Labels.severity }}'
+          class: '{{ .Labels.component }}'
+          group: 'speccursor'
+          details:
+            firing: '{{ .Alerts.Firing | len }}'
+            num_firing: '{{ .Alerts.Firing | len }}'
+            num_resolved: '{{ .Alerts.Resolved | len }}'
+            resolved: '{{ template "pagerduty.default.description" . }}'
+          send_resolved: true
+    
+    - name: 'webhook'
+      webhook_configs:
+        - url: 'https://api.company.com/webhooks/speccursor-alerts'
+          send_resolved: true
+          http_config:
+            basic_auth:
+              username: 'webhook-user'
+              password: 'YOUR_WEBHOOK_PASSWORD'
+            tls_config:
+              ca_file: '/etc/ssl/certs/ca-certificates.crt'
+          max_alerts: 0
+          title: 'SpecCursor Alert'
+          message: |
+            {{ range .Alerts }}
+            Alert: {{ .Annotations.summary }}
+            Description: {{ .Annotations.description }}
+            Severity: {{ .Labels.severity }}
+            Service: {{ .Labels.service }}
+            Component: {{ .Labels.component }}
+            Runbook: {{ .Annotations.runbook_url }}
+            {{ end }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: speccursor-alertmanager-templates
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: speccursor
+    app.kubernetes.io/part-of: speccursor
+data:
+  # Slack template
+  slack.tmpl: |
+    {{ define "slack.speccursor.title" }}
+    {{ if eq .Status "firing" }}🚨{{ else }}✅{{ end }} SpecCursor Alert
+    {{ end }}
+    
+    {{ define "slack.speccursor.text" }}
+    {{ range .Alerts }}
+    *Alert:* {{ .Annotations.summary }}
+    *Description:* {{ .Annotations.description }}
+    *Severity:* {{ .Labels.severity }}
+    *Service:* {{ .Labels.service }}
+    *Component:* {{ .Labels.component }}
+    *Runbook:* {{ .Annotations.runbook_url }}
+    {{ end }}
+    {{ end }}
+  
+  # Email template
+  email.tmpl: |
+    {{ define "email.speccursor.html" }}
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>SpecCursor Alert</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .alert { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 5px; }
+            .critical { border-left: 5px solid #d32f2f; background-color: #ffebee; }
+            .warning { border-left: 5px solid #f57c00; background-color: #fff3e0; }
+            .info { border-left: 5px solid #1976d2; background-color: #e3f2fd; }
+            .severity { font-weight: bold; padding: 5px 10px; border-radius: 3px; color: white; }
+            .critical .severity { background-color: #d32f2f; }
+            .warning .severity { background-color: #f57c00; }
+            .info .severity { background-color: #1976d2; }
+            .runbook { margin-top: 10px; }
+            .runbook a { color: #1976d2; text-decoration: none; }
+            .runbook a:hover { text-decoration: underline; }
+        </style>
+    </head>
+    <body>
+        <h1>{{ template "email.speccursor.title" . }}</h1>
+        {{ range .Alerts }}
+        <div class="alert {{ .Labels.severity }}">
+            <div class="severity">{{ .Labels.severity | upper }}</div>
+            <h2>{{ .Annotations.summary }}</h2>
+            <p><strong>Description:</strong> {{ .Annotations.description }}</p>
+            <p><strong>Service:</strong> {{ .Labels.service }}</p>
+            <p><strong>Component:</strong> {{ .Labels.component }}</p>
+            <div class="runbook">
+                <a href="{{ .Annotations.runbook_url }}">📖 View Runbook</a>
+            </div>
+        </div>
+        {{ end }}
+    </body>
+    </html>
+    {{ end }}
+    
+    {{ define "email.speccursor.title" }}
+    {{ if eq .Status "firing" }}🚨{{ else }}✅{{ end }} SpecCursor Alert
+    {{ end }} 

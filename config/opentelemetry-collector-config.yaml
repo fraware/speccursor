@@ -1,0 +1,816 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: speccursor-collector
+  namespace: monitoring
+spec:
+  mode: deployment
+  serviceAccount: speccursor-collector
+  replicas: 2
+  image: otel/opentelemetry-collector-contrib:0.88.0
+  imagePullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  config: |
+    receivers:
+      # OTLP receiver for traces, metrics, and logs
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+      
+      # Jaeger receiver for legacy Jaeger clients
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:14250
+          thrift_http:
+            endpoint: 0.0.0.0:14268
+      
+      # Zipkin receiver for legacy Zipkin clients
+      zipkin:
+        endpoint: 0.0.0.0:9411
+      
+      # Prometheus receiver for metrics
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: 'speccursor-services'
+              static_configs:
+                - targets: 
+                  - 'github-app:3000'
+                  - 'controller:3001'
+                  - 'ai-service:3002'
+                  - 'rust-worker:8080'
+                  - 'lean-engine:8081'
+              scrape_interval: 30s
+              metrics_path: /metrics
+      
+      # Filelog receiver for application logs
+      filelog:
+        include: [ /var/log/speccursor/*.log ]
+        start_at: end
+        operators:
+          - type: regex_parser
+            regex: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?P<level>\w+) (?P<logger>\w+) (?P<message>.*)$'
+            timestamp:
+              parse_from: timestamp
+              layout: '2006-01-02 15:04:05'
+            severity:
+              parse_from: level
+              mapping:
+                info: INFO
+                warn: WARN
+                error: ERROR
+                debug: DEBUG
+
+    processors:
+      # Batch processor for efficient transmission
+      batch:
+        timeout: 1s
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+      
+      # Memory limiter to prevent OOM
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 1500
+        spike_limit_mib: 512
+      
+      # Resource processor to add service information
+      resource:
+        attributes:
+          - key: service.name
+            value: "speccursor"
+            from_attribute: "service.name"
+          - key: service.version
+            value: "1.0.0"
+          - key: deployment.environment
+            value: "production"
+          - key: cloud.provider
+            value: "aws"
+          - key: cloud.region
+            value: "us-west-2"
+      
+      # Attributes processor to add custom attributes
+      attributes:
+        actions:
+          - key: db.statement
+            action: delete
+          - key: http.request.header.authorization
+            action: delete
+          - key: http.response.header.authorization
+            action: delete
+          - key: http.request.header.cookie
+            action: delete
+          - key: http.response.header.set-cookie
+            action: delete
+      
+      # Filter processor to drop unwanted telemetry
+      filter:
+        spans:
+          include:
+            match_type: regexp
+            services: [".*"]
+            attributes:
+              - key: name
+                value: ".*"
+                match_type: regexp
+        metrics:
+          include:
+            match_type: regexp
+            metric_names: [".*"]
+        logs:
+          include:
+            match_type: regexp
+            resource_attributes:
+              - key: service.name
+                value: ".*"
+                match_type: regexp
+      
+      # Probabilistic sampling for traces
+      probabilistic_sampler:
+        hash_seed: 22
+        sampling_percentage: 10
+      
+      # Tail sampling for traces
+      tail_sampling:
+        decision_wait: 10s
+        num_traces: 10000
+        expected_new_traces_per_sec: 10
+        policies:
+          - name: speccursor-policy
+            type: probabilistic
+            probabilistic:
+              sampling_percentage: 100
+          - name: error-policy
+            type: status_code
+            status_code:
+              status_codes: [ERROR]
+          - name: latency-policy
+            type: latency
+            latency:
+              threshold_ms: 5000
+      
+      # Service graph processor for dependency visualization
+      servicegraph:
+        store:
+          ttl: 2s
+          max_items: 1000
+        wait:
+          max_seconds: 10
+          max_items: 100
+        cache_loop:
+          ttl: 2s
+        store_expiration_loop:
+          ttl: 2s
+          max_items: 1000
+
+    exporters:
+      # OTLP exporter to Jaeger
+      otlp/jaeger:
+        endpoint: jaeger:4317
+        tls:
+          insecure: true
+      
+      # OTLP exporter to Prometheus
+      otlp/prometheus:
+        endpoint: prometheus:9090
+        tls:
+          insecure: true
+      
+      # OTLP exporter to Loki
+      otlp/loki:
+        endpoint: loki:3100
+        tls:
+          insecure: true
+      
+      # Prometheus exporter for metrics
+      prometheus:
+        endpoint: "0.0.0.0:9464"
+        namespace: "speccursor"
+        const_labels:
+          label1: value1
+        send_timestamps: true
+        metric_expiration: 180m
+        enable_open_metrics: true
+        add_metric_suffixes: false
+      
+      # Logging exporter for debugging
+      logging:
+        loglevel: debug
+        sampling_initial: 1
+        sampling_thereafter: 1
+      
+      # File exporter for local debugging
+      file:
+        path: /tmp/telemetry.json
+      
+      # AWS X-Ray exporter for AWS integration
+      awsxray:
+        region: us-west-2
+        resource_arn: "arn:aws:ecs:us-west-2:123456789012:cluster/speccursor"
+        role_arn: "arn:aws:iam::123456789012:role/speccursor-xray-role"
+      
+      # AWS CloudWatch exporter for logs
+      awscloudwatch:
+        region: us-west-2
+        log_group_name: "/aws/speccursor/application"
+        log_stream_name: "speccursor-{instance_id}"
+        role_arn: "arn:aws:iam::123456789012:role/speccursor-cloudwatch-role"
+      
+      # AWS S3 exporter for long-term storage
+      awss3:
+        s3_bucket: "speccursor-telemetry"
+        s3_region: "us-west-2"
+        s3_prefix: "telemetry/"
+        role_arn: "arn:aws:iam::123456789012:role/speccursor-s3-role"
+
+    extensions:
+      # Health check extension
+      health_check:
+        endpoint: 0.0.0.0:13133
+      
+      # Pprof extension for profiling
+      pprof:
+        endpoint: 0.0.0.0:1777
+      
+      # Zpages extension for debugging
+      zpages:
+        endpoint: 0.0.0.0:55679
+
+    service:
+      extensions: [health_check, pprof, zpages]
+      pipelines:
+        # Traces pipeline
+        traces:
+          receivers: [otlp, jaeger, zipkin]
+          processors: [batch, memory_limiter, resource, attributes, filter, probabilistic_sampler, tail_sampling, servicegraph]
+          exporters: [otlp/jaeger, logging, file, awsxray]
+        
+        # Metrics pipeline
+        metrics:
+          receivers: [otlp, prometheus]
+          processors: [batch, memory_limiter, resource, attributes, filter]
+          exporters: [otlp/prometheus, prometheus, logging, file, awsxray]
+        
+        # Logs pipeline
+        logs:
+          receivers: [otlp, filelog]
+          processors: [batch, memory_limiter, resource, attributes, filter]
+          exporters: [otlp/loki, logging, file, awscloudwatch, awss3]
+
+  service:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
+        prometheus.io/path: "/metrics"
+    spec:
+      ports:
+        - name: otlp-grpc
+          port: 4317
+          targetPort: 4317
+        - name: otlp-http
+          port: 4318
+          targetPort: 4318
+        - name: jaeger-grpc
+          port: 14250
+          targetPort: 14250
+        - name: jaeger-http
+          port: 14268
+          targetPort: 14268
+        - name: zipkin
+          port: 9411
+          targetPort: 9411
+        - name: prometheus
+          port: 9464
+          targetPort: 9464
+        - name: health-check
+          port: 13133
+          targetPort: 13133
+        - name: pprof
+          port: 1777
+          targetPort: 1777
+        - name: zpages
+          port: 55679
+          targetPort: 55679
+      selector:
+        app.kubernetes.io/name: speccursor-collector
+      type: ClusterIP
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: speccursor-collector
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: speccursor-collector
+    app.kubernetes.io/part-of: speccursor
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: speccursor-collector
+  labels:
+    app.kubernetes.io/name: speccursor-collector
+    app.kubernetes.io/part-of: speccursor
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "endpoints", "nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  - apiGroups: ["autoscaling.k8s.io"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: speccursor-collector
+  labels:
+    app.kubernetes.io/name: speccursor-collector
+    app.kubernetes.io/part-of: speccursor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: speccursor-collector
+subjects:
+  - kind: ServiceAccount
+    name: speccursor-collector
+    namespace: monitoring
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: speccursor-collector
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: speccursor-collector
+    app.kubernetes.io/part-of: speccursor
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: speccursor-collector
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: speccursor-collector
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: speccursor-collector
+    app.kubernetes.io/part-of: speccursor
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: speccursor-collector
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: default
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 4317
+        - protocol: TCP
+          port: 4318
+        - protocol: TCP
+          port: 14250
+        - protocol: TCP
+          port: 14268
+        - protocol: TCP
+          port: 9411
+        - protocol: TCP
+          port: 9464
+        - protocol: TCP
+          port: 13133
+        - protocol: TCP
+          port: 1777
+        - protocol: TCP
+          port: 55679
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 4317
+        - protocol: TCP
+          port: 9090
+        - protocol: TCP
+          port: 3100
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: speccursor-collector-config
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: speccursor-collector
+    app.kubernetes.io/part-of: speccursor
+data:
+  # Custom metrics configuration
+  custom-metrics.yaml: |
+    metrics:
+      - name: speccursor_upgrade_requests_total
+        description: "Total number of upgrade requests"
+        unit: "1"
+        type: "counter"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: ecosystem
+            description: "Ecosystem type"
+          - key: status
+            description: "Request status"
+      
+      - name: speccursor_ai_patch_attempts_total
+        description: "Total number of AI patch attempts"
+        unit: "1"
+        type: "counter"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: ecosystem
+            description: "Ecosystem type"
+          - key: success
+            description: "Patch success status"
+      
+      - name: speccursor_lean_proof_duration_seconds
+        description: "Duration of Lean proof verification"
+        unit: "s"
+        type: "histogram"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: theorem
+            description: "Theorem name"
+          - key: status
+            description: "Proof status"
+      
+      - name: speccursor_github_webhook_events_total
+        description: "Total number of GitHub webhook events"
+        unit: "1"
+        type: "counter"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: event_type
+            description: "GitHub event type"
+          - key: repository
+            description: "Repository name"
+      
+      - name: speccursor_database_operations_total
+        description: "Total number of database operations"
+        unit: "1"
+        type: "counter"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: operation
+            description: "Database operation type"
+          - key: table
+            description: "Database table name"
+          - key: status
+            description: "Operation status"
+      
+      - name: speccursor_redis_operations_total
+        description: "Total number of Redis operations"
+        unit: "1"
+        type: "counter"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: operation
+            description: "Redis operation type"
+          - key: status
+            description: "Operation status"
+      
+      - name: speccursor_http_requests_duration_seconds
+        description: "Duration of HTTP requests"
+        unit: "s"
+        type: "histogram"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: method
+            description: "HTTP method"
+          - key: route
+            description: "HTTP route"
+          - key: status_code
+            description: "HTTP status code"
+      
+      - name: speccursor_http_requests_total
+        description: "Total number of HTTP requests"
+        unit: "1"
+        type: "counter"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: method
+            description: "HTTP method"
+          - key: route
+            description: "HTTP route"
+          - key: status_code
+            description: "HTTP status code"
+      
+      - name: speccursor_active_connections
+        description: "Number of active connections"
+        unit: "1"
+        type: "gauge"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: connection_type
+            description: "Connection type"
+      
+      - name: speccursor_memory_usage_bytes
+        description: "Memory usage in bytes"
+        unit: "By"
+        type: "gauge"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: memory_type
+            description: "Memory type"
+      
+      - name: speccursor_cpu_usage_percent
+        description: "CPU usage percentage"
+        unit: "1"
+        type: "gauge"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: cpu_type
+            description: "CPU type"
+
+  # Custom traces configuration
+  custom-traces.yaml: |
+    traces:
+      - name: speccursor_upgrade_workflow
+        description: "Complete upgrade workflow trace"
+        attributes:
+          - key: workflow_id
+            description: "Unique workflow identifier"
+          - key: repository
+            description: "Target repository"
+          - key: ecosystem
+            description: "Target ecosystem"
+          - key: status
+            description: "Workflow status"
+      
+      - name: speccursor_ai_patch_generation
+        description: "AI patch generation trace"
+        attributes:
+          - key: patch_id
+            description: "Unique patch identifier"
+          - key: ecosystem
+            description: "Target ecosystem"
+          - key: test_failures
+            description: "Number of test failures"
+          - key: success
+            description: "Patch generation success"
+      
+      - name: speccursor_lean_proof_verification
+        description: "Lean proof verification trace"
+        attributes:
+          - key: proof_id
+            description: "Unique proof identifier"
+          - key: theorem
+            description: "Theorem name"
+          - key: status
+            description: "Proof status"
+          - key: duration_ms
+            description: "Proof duration in milliseconds"
+      
+      - name: speccursor_github_webhook_processing
+        description: "GitHub webhook processing trace"
+        attributes:
+          - key: webhook_id
+            description: "Unique webhook identifier"
+          - key: event_type
+            description: "GitHub event type"
+          - key: repository
+            description: "Repository name"
+          - key: status
+            description: "Processing status"
+      
+      - name: speccursor_database_operation
+        description: "Database operation trace"
+        attributes:
+          - key: operation_id
+            description: "Unique operation identifier"
+          - key: operation
+            description: "Operation type"
+          - key: table
+            description: "Table name"
+          - key: duration_ms
+            description: "Operation duration in milliseconds"
+          - key: status
+            description: "Operation status"
+      
+      - name: speccursor_redis_operation
+        description: "Redis operation trace"
+        attributes:
+          - key: operation_id
+            description: "Unique operation identifier"
+          - key: operation
+            description: "Operation type"
+          - key: key
+            description: "Redis key"
+          - key: duration_ms
+            description: "Operation duration in milliseconds"
+          - key: status
+            description: "Operation status"
+      
+      - name: speccursor_http_request
+        description: "HTTP request trace"
+        attributes:
+          - key: request_id
+            description: "Unique request identifier"
+          - key: method
+            description: "HTTP method"
+          - key: route
+            description: "HTTP route"
+          - key: status_code
+            description: "HTTP status code"
+          - key: duration_ms
+            description: "Request duration in milliseconds"
+          - key: user_agent
+            description: "User agent"
+          - key: client_ip
+            description: "Client IP address"
+
+  # Custom logs configuration
+  custom-logs.yaml: |
+    logs:
+      - name: speccursor_application_logs
+        description: "Application logs from SpecCursor services"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: level
+            description: "Log level"
+          - key: logger
+            description: "Logger name"
+          - key: trace_id
+            description: "Trace ID for correlation"
+          - key: span_id
+            description: "Span ID for correlation"
+          - key: user_id
+            description: "User identifier"
+          - key: request_id
+            description: "Request identifier"
+          - key: session_id
+            description: "Session identifier"
+      
+      - name: speccursor_error_logs
+        description: "Error logs from SpecCursor services"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: error_type
+            description: "Error type"
+          - key: error_message
+            description: "Error message"
+          - key: stack_trace
+            description: "Stack trace"
+          - key: trace_id
+            description: "Trace ID for correlation"
+          - key: span_id
+            description: "Span ID for correlation"
+      
+      - name: speccursor_security_logs
+        description: "Security-related logs from SpecCursor services"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: event_type
+            description: "Security event type"
+          - key: user_id
+            description: "User identifier"
+          - key: ip_address
+            description: "IP address"
+          - key: user_agent
+            description: "User agent"
+          - key: action
+            description: "Action performed"
+          - key: resource
+            description: "Resource accessed"
+          - key: status
+            description: "Action status"
+      
+      - name: speccursor_performance_logs
+        description: "Performance-related logs from SpecCursor services"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: metric_name
+            description: "Metric name"
+          - key: metric_value
+            description: "Metric value"
+          - key: metric_unit
+            description: "Metric unit"
+          - key: threshold
+            description: "Performance threshold"
+          - key: status
+            description: "Performance status"
+      
+      - name: speccursor_audit_logs
+        description: "Audit logs from SpecCursor services"
+        attributes:
+          - key: service
+            description: "Service name"
+          - key: user_id
+            description: "User identifier"
+          - key: action
+            description: "Action performed"
+          - key: resource
+            description: "Resource accessed"
+          - key: timestamp
+            description: "Event timestamp"
+          - key: ip_address
+            description: "IP address"
+          - key: user_agent
+            description: "User agent"
+          - key: result
+            description: "Action result" 

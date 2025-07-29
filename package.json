@@ -1,0 +1,84 @@
+{
+  "name": "speccursor",
+  "version": "0.1.0",
+  "description": "Autonomous dependency upgrades, AI-powered regression patches, and formal verification using Lean 4.20.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "workers/*",
+    "packages/*",
+    "infrastructure/*",
+    "tools/*"
+  ],
+  "scripts": {
+    "dev:up": "docker-compose up -d && pnpm run --parallel dev",
+    "dev:down": "docker-compose down && pnpm run --parallel dev:stop",
+    "dev:logs": "docker-compose logs -f",
+    "dev:clean": "docker-compose down -v && pnpm clean",
+    "test": "pnpm run --recursive test",
+    "test:unit": "pnpm run --recursive test:unit",
+    "test:integration": "pnpm run --recursive test:integration",
+    "test:coverage": "pnpm run --recursive test:coverage",
+    "build": "pnpm run --recursive build",
+    "build:clean": "pnpm clean && pnpm build",
+    "build:docker": "docker-compose build",
+    "lint": "pnpm run --recursive lint",
+    "lint:fix": "pnpm run --recursive lint:fix",
+    "format": "prettier --write \"**/*.{js,ts,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{js,ts,json,md,yml,yaml}\"",
+    "security:scan": "pnpm run --recursive security:scan",
+    "security:audit": "pnpm audit && cargo audit && go list -json -deps ./... | jq -r '.[] | select(.Vulnerabilities != null) | .Path'",
+    "clean": "pnpm run --recursive clean",
+    "deploy:staging": "pnpm build && docker-compose -f docker-compose.staging.yml up -d",
+    "deploy:prod": "pnpm build && docker-compose -f docker-compose.prod.yml up -d",
+    "docs:build": "mkdocs build",
+    "docs:serve": "mkdocs serve",
+    "release": "semantic-release",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.0",
+    "semantic-release": "^22.0.0",
+    "@semantic-release/changelog": "^6.0.0",
+    "@semantic-release/git": "^10.0.0",
+    "@semantic-release/github": "^9.2.0",
+    "@semantic-release/npm": "^10.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/speccursor/speccursor.git"
+  },
+  "keywords": [
+    "github-app",
+    "dependency-upgrades",
+    "ai-patching",
+    "formal-verification",
+    "lean",
+    "claude",
+    "rust",
+    "typescript",
+    "microservices"
+  ],
+  "author": "SpecCursor Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/speccursor/speccursor/issues"
+  },
+  "homepage": "https://github.com/speccursor/speccursor#readme"
+} 

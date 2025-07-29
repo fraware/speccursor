@@ -1,0 +1,252 @@
+{
+  "upgrade-workflow": {
+    "latency": {
+      "p50": 1000,
+      "p95": 3000,
+      "p99": 5000,
+      "max": 10000
+    },
+    "throughput": {
+      "requests_per_second": {
+        "min": 50,
+        "target": 100,
+        "max": 200
+      },
+      "upgrades_per_minute": {
+        "min": 30,
+        "target": 60,
+        "max": 120
+      }
+    },
+    "error_rate": {
+      "max": 0.001,
+      "threshold": 0.01
+    },
+    "success_rate": {
+      "min": 0.999,
+      "target": 0.9999
+    },
+    "resource_usage": {
+      "cpu_percent": {
+        "p95": 70,
+        "max": 90
+      },
+      "memory_mb": {
+        "p95": 512,
+        "max": 1024
+      },
+      "disk_io_mb_s": {
+        "p95": 10,
+        "max": 50
+      }
+    },
+    "ai_tokens": {
+      "total": {
+        "max": 100000
+      },
+      "per_upgrade": {
+        "avg": 1000,
+        "max": 5000
+      }
+    },
+    "proof_verification": {
+      "latency_seconds": {
+        "p95": 5,
+        "max": 10
+      },
+      "success_rate": {
+        "min": 0.99
+      }
+    }
+  },
+  "ai-patch-generation": {
+    "latency": {
+      "p50": 2000,
+      "p95": 5000,
+      "p99": 10000,
+      "max": 15000
+    },
+    "throughput": {
+      "patches_per_minute": {
+        "min": 10,
+        "target": 20,
+        "max": 50
+      }
+    },
+    "error_rate": {
+      "max": 0.05,
+      "threshold": 0.1
+    },
+    "ai_tokens": {
+      "per_patch": {
+        "avg": 2000,
+        "max": 10000
+      }
+    },
+    "patch_quality": {
+      "success_rate": {
+        "min": 0.8,
+        "target": 0.9
+      },
+      "test_pass_rate": {
+        "min": 0.7,
+        "target": 0.8
+      }
+    }
+  },
+  "formal-verification": {
+    "latency": {
+      "p50": 3000,
+      "p95": 8000,
+      "p99": 15000,
+      "max": 20000
+    },
+    "throughput": {
+      "proofs_per_minute": {
+        "min": 5,
+        "target": 10,
+        "max": 20
+      }
+    },
+    "error_rate": {
+      "max": 0.01,
+      "threshold": 0.05
+    },
+    "proof_accuracy": {
+      "success_rate": {
+        "min": 0.99,
+        "target": 0.999
+      },
+      "false_positive_rate": {
+        "max": 0.001
+      }
+    }
+  },
+  "full-pipeline": {
+    "latency": {
+      "p50": 5000,
+      "p95": 12000,
+      "p99": 20000,
+      "max": 30000
+    },
+    "throughput": {
+      "pipelines_per_minute": {
+        "min": 2,
+        "target": 5,
+        "max": 10
+      }
+    },
+    "error_rate": {
+      "max": 0.01,
+      "threshold": 0.05
+    },
+    "success_rate": {
+      "min": 0.95,
+      "target": 0.98
+    },
+    "resource_usage": {
+      "cpu_percent": {
+        "p95": 80,
+        "max": 95
+      },
+      "memory_mb": {
+        "p95": 1024,
+        "max": 2048
+      }
+    }
+  },
+  "database": {
+    "connection_pool": {
+      "utilization_percent": {
+        "p95": 80,
+        "max": 95
+      },
+      "wait_time_ms": {
+        "p95": 100,
+        "max": 500
+      }
+    },
+    "query_latency": {
+      "p95": 100,
+      "max": 500
+    }
+  },
+  "redis": {
+    "latency": {
+      "p95": 10,
+      "max": 50
+    },
+    "memory_usage": {
+      "p95": 512,
+      "max": 1024
+    }
+  },
+  "external_apis": {
+    "github_api": {
+      "latency_ms": {
+        "p95": 500,
+        "max": 2000
+      },
+      "rate_limit": {
+        "remaining_percent": {
+          "min": 20
+        }
+      }
+    },
+    "anthropic_api": {
+      "latency_ms": {
+        "p95": 2000,
+        "max": 5000
+      },
+      "tokens_per_request": {
+        "avg": 1000,
+        "max": 5000
+      }
+    },
+    "morph_api": {
+      "latency_ms": {
+        "p95": 1000,
+        "max": 3000
+      }
+    }
+  },
+  "cost_budgets": {
+    "monthly": {
+      "compute_usd": {
+        "max": 5000
+      },
+      "ai_tokens_usd": {
+        "max": 2000
+      },
+      "storage_usd": {
+        "max": 500
+      },
+      "network_usd": {
+        "max": 300
+      }
+    },
+    "per_upgrade": {
+      "compute_usd": {
+        "max": 0.10
+      },
+      "ai_tokens_usd": {
+        "max": 0.05
+      }
+    }
+  },
+  "slo_targets": {
+    "availability": {
+      "target": 0.9999,
+      "window": "30d"
+    },
+    "latency": {
+      "target": 0.95,
+      "threshold_ms": 3000,
+      "window": "5m"
+    },
+    "error_budget": {
+      "target": 0.001,
+      "window": "30d"
+    }
+  }
+} 

@@ -1,0 +1,76 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "rules/*.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # SpecCursor Services
+  - job_name: 'speccursor-github-app'
+    static_configs:
+      - targets: ['github-app:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'speccursor-controller'
+    static_configs:
+      - targets: ['controller:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'speccursor-ai-service'
+    static_configs:
+      - targets: ['ai-service:3002']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'speccursor-rust-worker'
+    static_configs:
+      - targets: ['rust-worker:3003']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Database metrics
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Redis metrics
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Node exporter for system metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+
+  # Docker metrics
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['docker-exporter:9323']
+    scrape_interval: 30s
+
+  # Grafana
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s 

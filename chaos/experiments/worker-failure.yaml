@@ -1,0 +1,60 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: worker-failure-test
+  namespace: chaos-testing
+spec:
+  action: pod-failure
+  mode: one
+  value: ""
+  duration: "30s"
+  selector:
+    namespaces:
+      - speccursor
+    labelSelectors:
+      app: speccursor-worker
+  scheduler:
+    cron: "@every 5m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: worker-network-delay
+  namespace: chaos-testing
+spec:
+  action: delay
+  mode: one
+  value: ""
+  delay:
+    latency: "100ms"
+    correlation: "100"
+    jitter: "0ms"
+  duration: "60s"
+  selector:
+    namespaces:
+      - speccursor
+    labelSelectors:
+      app: speccursor-worker
+  scheduler:
+    cron: "@every 10m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: worker-memory-pressure
+  namespace: chaos-testing
+spec:
+  mode: one
+  value: ""
+  stressors:
+    memory:
+      workers: 1
+      size: "256MB"
+  duration: "45s"
+  selector:
+    namespaces:
+      - speccursor
+    labelSelectors:
+      app: speccursor-worker
+  scheduler:
+    cron: "@every 15m" 

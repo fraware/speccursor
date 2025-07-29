@@ -1,0 +1,66 @@
+# SpecCursor Code Ownership
+
+# Core Services
+/apps/github-app/ @speccursor/github-app-team
+/apps/controller/ @speccursor/controller-team
+/apps/ai-service/ @speccursor/ai-team
+
+# Worker Implementations
+/workers/rust-worker/ @speccursor/rust-team
+/workers/lean-engine/ @speccursor/formal-team
+
+# Shared Packages
+/packages/shared-types/ @speccursor/core-team
+/packages/shared-utils/ @speccursor/core-team
+/packages/shared-config/ @speccursor/core-team
+
+# Infrastructure
+/infrastructure/ @speccursor/infrastructure-team
+/terraform/ @speccursor/infrastructure-team
+/docker-compose.yml @speccursor/infrastructure-team
+
+# Documentation
+/docs/ @speccursor/documentation-team
+/README.md @speccursor/documentation-team
+/CONTRIBUTING.md @speccursor/documentation-team
+
+# Security
+/scripts/ai-patch.ts @speccursor/ai-team @speccursor/security-team
+/scripts/post-patch-proof.ts @speccursor/formal-team @speccursor/security-team
+/docs/architecture/threat-model.md @speccursor/security-team
+/config/alertmanager-rules.yaml @speccursor/security-team
+
+# Configuration
+/.github/ @speccursor/devops-team
+/.husky/ @speccursor/devops-team
+/.commitlintrc.js @speccursor/devops-team
+/.eslintrc.js @speccursor/devops-team
+/.prettierrc @speccursor/devops-team
+/tsconfig.json @speccursor/devops-team
+/package.json @speccursor/devops-team
+/pnpm-workspace.yaml @speccursor/devops-team
+
+# CI/CD
+/.github/workflows/ @speccursor/devops-team
+/.github/actions/ @speccursor/devops-team
+
+# Testing
+/tests/ @speccursor/qa-team
+/workers/lean-engine/lean/test_runner.lean @speccursor/formal-team
+
+# Monitoring & Observability
+/config/prometheus.yml @speccursor/observability-team
+/config/grafana-dashboards.yaml @speccursor/observability-team
+/config/alertmanager-rules.yaml @speccursor/observability-team
+/config/opentelemetry-collector-config.yaml @speccursor/observability-team
+
+# Database
+/infrastructure/docker/postgres/ @speccursor/data-team
+
+# Release & Governance
+/CHANGELOG.md @speccursor/release-team
+/.github/CODEOWNERS @speccursor/release-team
+/docs/rfcs/ @speccursor/release-team
+
+# All files (fallback)
+* @speccursor/core-team 

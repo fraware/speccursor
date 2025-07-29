@@ -1,0 +1,588 @@
+apiVersion: 1
+
+providers:
+  - name: 'SpecCursor Dashboards'
+    orgId: 1
+    folder: 'SpecCursor'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+
+dashboards:
+  - name: 'SpecCursor System Overview'
+    uid: speccursor-system-overview
+    title: 'SpecCursor System Overview'
+    tags: ['speccursor', 'overview']
+    timezone: 'browser'
+    refresh: '30s'
+    schemaVersion: 38
+    version: 1
+    links: []
+    panels:
+      - id: 1
+        title: 'System Health'
+        type: 'stat'
+        gridPos:
+          h: 8
+          w: 12
+          x: 0
+          y: 0
+        targets:
+          - expr: 'up{job="speccursor-services"}'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'thresholds'
+            thresholds:
+              steps:
+                - color: 'red'
+                  value: null
+                - color: 'green'
+                  value: 1
+            unit: 'short'
+          overrides: []
+
+      - id: 2
+        title: 'Active Jobs'
+        type: 'stat'
+        gridPos:
+          h: 8
+          w: 12
+          x: 12
+          y: 0
+        targets:
+          - expr: 'speccursor_active_jobs_total'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'short'
+          overrides: []
+
+      - id: 3
+        title: 'Upgrade Success Rate'
+        type: 'stat'
+        gridPos:
+          h: 8
+          w: 12
+          x: 0
+          y: 8
+        targets:
+          - expr: 'rate(speccursor_upgrade_success_total[5m]) / rate(speccursor_upgrade_attempts_total[5m]) * 100'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'thresholds'
+            thresholds:
+              steps:
+                - color: 'red'
+                  value: null
+                - color: 'yellow'
+                  value: 80
+                - color: 'green'
+                  value: 95
+            unit: 'percent'
+            min: 0
+            max: 100
+          overrides: []
+
+      - id: 4
+        title: 'AI Patch Generation Success Rate'
+        type: 'stat'
+        gridPos:
+          h: 8
+          w: 12
+          x: 12
+          y: 8
+        targets:
+          - expr: 'rate(speccursor_ai_patch_success_total[5m]) / rate(speccursor_ai_patch_attempts_total[5m]) * 100'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'thresholds'
+            thresholds:
+              steps:
+                - color: 'red'
+                  value: null
+                - color: 'yellow'
+                  value: 70
+                - color: 'green'
+                  value: 90
+            unit: 'percent'
+            min: 0
+            max: 100
+          overrides: []
+
+      - id: 5
+        title: 'Proof Verification Success Rate'
+        type: 'stat'
+        gridPos:
+          h: 8
+          w: 12
+          x: 0
+          y: 16
+        targets:
+          - expr: 'rate(speccursor_proof_success_total[5m]) / rate(speccursor_proof_attempts_total[5m]) * 100'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'thresholds'
+            thresholds:
+              steps:
+                - color: 'red'
+                  value: null
+                - color: 'yellow'
+                  value: 85
+                - color: 'green'
+                  value: 95
+            unit: 'percent'
+            min: 0
+            max: 100
+          overrides: []
+
+      - id: 6
+        title: 'Average Response Time'
+        type: 'stat'
+        gridPos:
+          h: 8
+          w: 12
+          x: 12
+          y: 16
+        targets:
+          - expr: 'histogram_quantile(0.95, rate(speccursor_http_request_duration_seconds_bucket[5m]))'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'thresholds'
+            thresholds:
+              steps:
+                - color: 'green'
+                  value: null
+                - color: 'yellow'
+                  value: 1
+                - color: 'red'
+                  value: 5
+            unit: 's'
+          overrides: []
+
+  - name: 'SpecCursor Upgrade Metrics'
+    uid: speccursor-upgrade-metrics
+    title: 'SpecCursor Upgrade Metrics'
+    tags: ['speccursor', 'upgrades']
+    timezone: 'browser'
+    refresh: '30s'
+    schemaVersion: 38
+    version: 1
+    links: []
+    panels:
+      - id: 1
+        title: 'Upgrade Duration by Ecosystem'
+        type: 'heatmap'
+        gridPos:
+          h: 8
+          w: 24
+          x: 0
+          y: 0
+        targets:
+          - expr: 'rate(speccursor_upgrade_duration_seconds_bucket[5m])'
+            refId: A
+            legendFormat: '{{le}}'
+        fieldConfig:
+          defaults:
+            custom:
+              hideFrom:
+                legend: false
+                tooltip: false
+                vis: false
+            unit: 's'
+          overrides: []
+
+      - id: 2
+        title: 'Upgrade Success Rate by Ecosystem'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 0
+          y: 8
+        targets:
+          - expr: 'rate(speccursor_upgrade_success_total[5m]) by (ecosystem)'
+            refId: A
+            legendFormat: '{{ecosystem}}'
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'short'
+          overrides: []
+
+      - id: 3
+        title: 'Upgrade Failure Rate by Ecosystem'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 12
+          y: 8
+        targets:
+          - expr: 'rate(speccursor_upgrade_failure_total[5m]) by (ecosystem)'
+            refId: A
+            legendFormat: '{{ecosystem}}'
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'short'
+          overrides: []
+
+  - name: 'SpecCursor AI Performance'
+    uid: speccursor-ai-performance
+    title: 'SpecCursor AI Performance'
+    tags: ['speccursor', 'ai']
+    timezone: 'browser'
+    refresh: '30s'
+    schemaVersion: 38
+    version: 1
+    links: []
+    panels:
+      - id: 1
+        title: 'Claude API Token Usage'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 0
+          y: 0
+        targets:
+          - expr: 'rate(speccursor_ai_tokens_total[5m])'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'short'
+          overrides: []
+
+      - id: 2
+        title: 'AI Patch Generation Time'
+        type: 'histogram'
+        gridPos:
+          h: 8
+          w: 12
+          x: 12
+          y: 0
+        targets:
+          - expr: 'rate(speccursor_ai_patch_generation_duration_seconds_bucket[5m])'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 's'
+          overrides: []
+
+      - id: 3
+        title: 'AI Patch Success Rate'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 0
+          y: 8
+        targets:
+          - expr: 'rate(speccursor_ai_patch_success_total[5m]) / rate(speccursor_ai_patch_attempts_total[5m]) * 100'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'thresholds'
+            thresholds:
+              steps:
+                - color: 'red'
+                  value: null
+                - color: 'yellow'
+                  value: 70
+                - color: 'green'
+                  value: 90
+            unit: 'percent'
+            min: 0
+            max: 100
+          overrides: []
+
+      - id: 4
+        title: 'AI Patch Confidence Scores'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 12
+          y: 8
+        targets:
+          - expr: 'speccursor_ai_patch_confidence_score'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'short'
+            min: 0
+            max: 1
+          overrides: []
+
+  - name: 'SpecCursor Proof Verification'
+    uid: speccursor-proof-verification
+    title: 'SpecCursor Proof Verification'
+    tags: ['speccursor', 'proofs']
+    timezone: 'browser'
+    refresh: '30s'
+    schemaVersion: 38
+    version: 1
+    links: []
+    panels:
+      - id: 1
+        title: 'Proof Verification Duration'
+        type: 'histogram'
+        gridPos:
+          h: 8
+          w: 12
+          x: 0
+          y: 0
+        targets:
+          - expr: 'rate(speccursor_proof_verification_duration_seconds_bucket[5m])'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 's'
+          overrides: []
+
+      - id: 2
+        title: 'Proof Success Rate by Type'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 12
+          y: 0
+        targets:
+          - expr: 'rate(speccursor_proof_success_total[5m]) by (proof_type)'
+            refId: A
+            legendFormat: '{{proof_type}}'
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'short'
+          overrides: []
+
+      - id: 3
+        title: 'Lean Engine Performance'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 0
+          y: 8
+        targets:
+          - expr: 'speccursor_lean_engine_memory_usage_bytes'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'bytes'
+          overrides: []
+
+      - id: 4
+        title: 'Proof Complexity Distribution'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 12
+          y: 8
+        targets:
+          - expr: 'speccursor_proof_complexity_score'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'short'
+          overrides: []
+
+  - name: 'SpecCursor Security Metrics'
+    uid: speccursor-security-metrics
+    title: 'SpecCursor Security Metrics'
+    tags: ['speccursor', 'security']
+    timezone: 'browser'
+    refresh: '30s'
+    schemaVersion: 38
+    version: 1
+    links: []
+    panels:
+      - id: 1
+        title: 'Failed Webhook Signatures'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 0
+          y: 0
+        targets:
+          - expr: 'rate(speccursor_webhook_signature_failures_total[5m])'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'short'
+          overrides: []
+
+      - id: 2
+        title: 'Failed API Authentications'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 12
+          y: 0
+        targets:
+          - expr: 'rate(speccursor_api_auth_failures_total[5m])'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'short'
+          overrides: []
+
+      - id: 3
+        title: 'Suspicious Activity Detection'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 0
+          y: 8
+        targets:
+          - expr: 'rate(speccursor_suspicious_activity_total[5m])'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'short'
+          overrides: []
+
+      - id: 4
+        title: 'Container Security Violations'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 12
+          y: 8
+        targets:
+          - expr: 'rate(speccursor_container_security_violations_total[5m])'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'short'
+          overrides: []
+
+  - name: 'SpecCursor Infrastructure'
+    uid: speccursor-infrastructure
+    title: 'SpecCursor Infrastructure'
+    tags: ['speccursor', 'infrastructure']
+    timezone: 'browser'
+    refresh: '30s'
+    schemaVersion: 38
+    version: 1
+    links: []
+    panels:
+      - id: 1
+        title: 'CPU Usage by Service'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 0
+          y: 0
+        targets:
+          - expr: 'rate(container_cpu_usage_seconds_total{container!=""}[5m]) by (container)'
+            refId: A
+            legendFormat: '{{container}}'
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'short'
+          overrides: []
+
+      - id: 2
+        title: 'Memory Usage by Service'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 12
+          y: 0
+        targets:
+          - expr: 'container_memory_usage_bytes{container!=""} by (container)'
+            refId: A
+            legendFormat: '{{container}}'
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'bytes'
+          overrides: []
+
+      - id: 3
+        title: 'Database Connections'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 0
+          y: 8
+        targets:
+          - expr: 'speccursor_database_connections_active'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'short'
+          overrides: []
+
+      - id: 4
+        title: 'Redis Memory Usage'
+        type: 'timeseries'
+        gridPos:
+          h: 8
+          w: 12
+          x: 12
+          y: 8
+        targets:
+          - expr: 'redis_memory_used_bytes'
+            refId: A
+        fieldConfig:
+          defaults:
+            color:
+              mode: 'palette-classic'
+            unit: 'bytes'
+          overrides: [] 
