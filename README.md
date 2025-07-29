@@ -16,12 +16,10 @@ SpecCursor is a GitHub App that autonomously upgrades dependencies, patches regr
 
 ### Key Features
 
-- 🤖 **AI-Powered Patching**: Uses Claude Sonnet 4 to generate regression patches
-- 🔍 **Formal Verification**: Leverages Lean 4.20.0 with Mathlib4 for invariant proofs
-- 🔄 **Multi-Ecosystem Support**: Node.js (pnpm), Rust (cargo), Python (pip), Go (go modules), Dockerfile
-- 🛡️ **Security First**: Sandboxed execution, comprehensive threat modeling, and security scanning
-- 📊 **Observability**: Prometheus metrics, OpenTelemetry tracing, Grafana dashboards
-- 🚀 **Production Ready**: AWS infrastructure, CI/CD pipelines, monitoring, and alerting
+- **AI-Powered Patching**: Uses Claude Sonnet 4 to generate regression patches
+- **Formal Verification**: Leverages Lean 4.20.0 with Mathlib4 for invariant proofs
+- **Multi-Ecosystem Support**: Node.js (pnpm), Rust (cargo), Python (pip), Go (go modules), Dockerfile
+- **Security First**: Sandboxed execution, comprehensive threat modeling, and security scanning
 
 ## Quick Start
 
@@ -38,8 +36,7 @@ SpecCursor is a GitHub App that autonomously upgrades dependencies, patches regr
 
 ```bash
 # Clone the repository
-git clone https://github.com/speccursor/speccursor.git
-cd speccursor
+git clone https://github.com/fraware/specursor.git
 
 # Install dependencies
 pnpm install
@@ -188,10 +185,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- 📖 [Documentation](https://speccursor.dev)
-- 🐛 [Issue Tracker](https://github.com/speccursor/speccursor/issues)
-- 💬 [Discussions](https://github.com/speccursor/speccursor/discussions)
-- 📧 [Email Support](mailto:support@speccursor.dev)
+- [Issue Tracker](https://github.com/speccursor/speccursor/issues)
+- [Discussions](https://github.com/speccursor/speccursor/discussions)
+- [Email Support](mailto:support@speccursor.dev)
 
 ## Roadmap
 

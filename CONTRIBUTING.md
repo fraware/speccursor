@@ -14,9 +14,6 @@ Thank you for your interest in contributing to SpecCursor! This document provide
 - [Release Process](#release-process)
 - [Support](#support)
 
-## Code of Conduct
-
-This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
 ## Getting Started
 
@@ -33,8 +30,7 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 
 1. **Fork and Clone**
    ```bash
-   git clone https://github.com/your-username/speccursor.git
-   cd speccursor
+   git clone https://github.com/fraware/speccursor.git
    ```
 
 2. **Install Dependencies**
@@ -355,16 +351,6 @@ pnpm security:audit
 - **Examples**: Provide usage examples
 - **Changelog**: Keep CHANGELOG.md updated
 
-### Documentation Structure
-
-```
-docs/
-├── architecture/   # Architecture documentation
-├── api/           # API documentation
-├── guides/        # User guides
-└── examples/      # Code examples
-```
-
 ## Release Process
 
 ### Versioning
@@ -438,4 +424,4 @@ Contributors will be recognized in:
 - **Releases**: Release notes
 - **Documentation**: Contributor acknowledgments
 
-Thank you for contributing to SpecCursor! 🚀 
+Thank you for contributing to SpecCursor!
