@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const path = require('path');
 
 /**
  * Parse k6 load test results and validate against performance budgets
@@ -107,41 +106,69 @@ class LoadTestParser {
     if (metrics.http_req_duration) {
       const percentiles = this.calculatePercentiles(metrics.http_req_duration);
       if (percentiles) {
-        this.validateLatency('http_req_duration', percentiles, scenarioBudgets.latency);
+        this.validateLatency(
+          'http_req_duration',
+          percentiles,
+          scenarioBudgets.latency
+        );
       }
     }
 
     if (metrics.upgrade_duration_seconds) {
-      const percentiles = this.calculatePercentiles(metrics.upgrade_duration_seconds);
+      const percentiles = this.calculatePercentiles(
+        metrics.upgrade_duration_seconds
+      );
       if (percentiles) {
-        this.validateLatency('upgrade_duration_seconds', percentiles, scenarioBudgets.latency);
+        this.validateLatency(
+          'upgrade_duration_seconds',
+          percentiles,
+          scenarioBudgets.latency
+        );
       }
     }
 
     if (metrics.proof_latency_seconds) {
-      const percentiles = this.calculatePercentiles(metrics.proof_latency_seconds);
+      const percentiles = this.calculatePercentiles(
+        metrics.proof_latency_seconds
+      );
       if (percentiles) {
-        this.validateLatency('proof_latency_seconds', percentiles, scenarioBudgets.proof_verification?.latency_seconds);
+        this.validateLatency(
+          'proof_latency_seconds',
+          percentiles,
+          scenarioBudgets.proof_verification?.latency_seconds
+        );
       }
     }
 
     // Validate error rate
     if (metrics.http_req_failed) {
-      this.validateErrorRate(metrics.http_req_failed, scenarioBudgets.error_rate);
+      this.validateErrorRate(
+        metrics.http_req_failed,
+        scenarioBudgets.error_rate
+      );
     }
 
     if (metrics.upgrade_success_rate) {
-      this.validateSuccessRate(metrics.upgrade_success_rate, scenarioBudgets.success_rate);
+      this.validateSuccessRate(
+        metrics.upgrade_success_rate,
+        scenarioBudgets.success_rate
+      );
     }
 
     // Validate throughput
     if (this.results.metrics?.http_reqs) {
-      this.validateThroughput(this.results.metrics.http_reqs, scenarioBudgets.throughput);
+      this.validateThroughput(
+        this.results.metrics.http_reqs,
+        scenarioBudgets.throughput
+      );
     }
 
     // Validate AI token usage
     if (metrics.ai_tokens_total) {
-      this.validateTokenUsage(metrics.ai_tokens_total, scenarioBudgets.ai_tokens);
+      this.validateTokenUsage(
+        metrics.ai_tokens_total,
+        scenarioBudgets.ai_tokens
+      );
     }
 
     return this.violations.length === 0;
@@ -162,12 +189,16 @@ class LoadTestParser {
           percentile: p,
           actual: value,
           budget: budgetValue,
-          violation: `${p}th percentile ${value}ms exceeds budget ${budgetValue}ms`
+          violation: `${p}th percentile ${value}ms exceeds budget ${budgetValue}ms`,
         };
         this.violations.push(violation);
-        console.log(`    ❌ ${p}th percentile: ${value}ms > ${budgetValue}ms (BUDGET VIOLATION)`);
+        console.log(
+          `    ❌ ${p}th percentile: ${value}ms > ${budgetValue}ms (BUDGET VIOLATION)`
+        );
       } else {
-        console.log(`    ✅ ${p}th percentile: ${value}ms ≤ ${budgetValue || 'N/A'}ms`);
+        console.log(
+          `    ✅ ${p}th percentile: ${value}ms ≤ ${budgetValue || 'N/A'}ms`
+        );
       }
     }
   }
@@ -187,12 +218,16 @@ class LoadTestParser {
         metric: 'error_rate',
         actual: errorRate,
         budget: maxErrorRate,
-        violation: `Error rate ${(errorRate * 100).toFixed(3)}% exceeds budget ${(maxErrorRate * 100).toFixed(3)}%`
+        violation: `Error rate ${(errorRate * 100).toFixed(3)}% exceeds budget ${(maxErrorRate * 100).toFixed(3)}%`,
       };
       this.violations.push(violation);
-      console.log(`    ❌ Error rate ${(errorRate * 100).toFixed(3)}% > ${(maxErrorRate * 100).toFixed(3)}% (BUDGET VIOLATION)`);
+      console.log(
+        `    ❌ Error rate ${(errorRate * 100).toFixed(3)}% > ${(maxErrorRate * 100).toFixed(3)}% (BUDGET VIOLATION)`
+      );
     } else {
-      console.log(`    ✅ Error rate ${(errorRate * 100).toFixed(3)}% ≤ ${(maxErrorRate * 100).toFixed(3)}%`);
+      console.log(
+        `    ✅ Error rate ${(errorRate * 100).toFixed(3)}% ≤ ${(maxErrorRate * 100).toFixed(3)}%`
+      );
     }
   }
 
@@ -211,12 +246,16 @@ class LoadTestParser {
         metric: 'success_rate',
         actual: successRate,
         budget: minSuccessRate,
-        violation: `Success rate ${(successRate * 100).toFixed(3)}% below budget ${(minSuccessRate * 100).toFixed(3)}%`
+        violation: `Success rate ${(successRate * 100).toFixed(3)}% below budget ${(minSuccessRate * 100).toFixed(3)}%`,
       };
       this.violations.push(violation);
-      console.log(`    ❌ Success rate ${(successRate * 100).toFixed(3)}% < ${(minSuccessRate * 100).toFixed(3)}% (BUDGET VIOLATION)`);
+      console.log(
+        `    ❌ Success rate ${(successRate * 100).toFixed(3)}% < ${(minSuccessRate * 100).toFixed(3)}% (BUDGET VIOLATION)`
+      );
     } else {
-      console.log(`    ✅ Success rate ${(successRate * 100).toFixed(3)}% ≥ ${(minSuccessRate * 100).toFixed(3)}%`);
+      console.log(
+        `    ✅ Success rate ${(successRate * 100).toFixed(3)}% ≥ ${(minSuccessRate * 100).toFixed(3)}%`
+      );
     }
   }
 
@@ -235,12 +274,16 @@ class LoadTestParser {
         metric: 'throughput',
         actual: rate,
         budget: minRate,
-        violation: `Throughput ${rate.toFixed(2)} req/s below budget ${minRate} req/s`
+        violation: `Throughput ${rate.toFixed(2)} req/s below budget ${minRate} req/s`,
       };
       this.violations.push(violation);
-      console.log(`    ❌ Throughput ${rate.toFixed(2)} req/s < ${minRate} req/s (BUDGET VIOLATION)`);
+      console.log(
+        `    ❌ Throughput ${rate.toFixed(2)} req/s < ${minRate} req/s (BUDGET VIOLATION)`
+      );
     } else {
-      console.log(`    ✅ Throughput ${rate.toFixed(2)} req/s ≥ ${minRate} req/s`);
+      console.log(
+        `    ✅ Throughput ${rate.toFixed(2)} req/s ≥ ${minRate} req/s`
+      );
     }
   }
 
@@ -259,12 +302,16 @@ class LoadTestParser {
         metric: 'ai_tokens_total',
         actual: totalTokens,
         budget: maxTokens,
-        violation: `AI tokens ${totalTokens.toLocaleString()} exceeds budget ${maxTokens.toLocaleString()}`
+        violation: `AI tokens ${totalTokens.toLocaleString()} exceeds budget ${maxTokens.toLocaleString()}`,
       };
       this.violations.push(violation);
-      console.log(`    ❌ AI tokens ${totalTokens.toLocaleString()} > ${maxTokens.toLocaleString()} (BUDGET VIOLATION)`);
+      console.log(
+        `    ❌ AI tokens ${totalTokens.toLocaleString()} > ${maxTokens.toLocaleString()} (BUDGET VIOLATION)`
+      );
     } else {
-      console.log(`    ✅ AI tokens ${totalTokens.toLocaleString()} ≤ ${maxTokens.toLocaleString()}`);
+      console.log(
+        `    ✅ AI tokens ${totalTokens.toLocaleString()} ≤ ${maxTokens.toLocaleString()}`
+      );
     }
   }
 
@@ -299,8 +346,8 @@ class LoadTestParser {
       summary: {
         total_violations: this.violations.length,
         passed: this.violations.length === 0,
-        metrics_analyzed: Object.keys(this.extractMetrics()).length
-      }
+        metrics_analyzed: Object.keys(this.extractMetrics()).length,
+      },
     };
 
     try {
@@ -317,7 +364,7 @@ class LoadTestParser {
  */
 function main() {
   const parser = new LoadTestParser();
-  
+
   // Parse command line arguments
   const args = process.argv.slice(2);
   let inputFile, budgetFile, scenario, outputFile;
@@ -395,4 +442,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = LoadTestParser; 
+module.exports = LoadTestParser;

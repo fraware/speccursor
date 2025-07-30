@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const path = require('path');
 
 /**
  * Evaluate qualification criteria for SpecCursor release candidates
@@ -14,7 +13,7 @@ class QualificationEvaluator {
       failed: 0,
       total: 0,
       violations: [],
-      summary: {}
+      summary: {},
     };
   }
 
@@ -24,7 +23,7 @@ class QualificationEvaluator {
   addStageResult(stage, result) {
     this.stages[stage] = result;
     this.results.total++;
-    
+
     if (result === 'success') {
       this.results.passed++;
     } else {
@@ -32,7 +31,7 @@ class QualificationEvaluator {
       this.results.violations.push({
         stage,
         result,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
   }
@@ -61,7 +60,7 @@ class QualificationEvaluator {
     return {
       qualified: exitCriteria.allPassed,
       summary: this.results,
-      exitCriteria
+      exitCriteria,
     };
   }
 
@@ -81,10 +80,10 @@ class QualificationEvaluator {
       'chaos-tests': 'Chaos & Resilience Tests',
       'security-scans': 'Security Scans',
       'vulnerability-sbom': 'Vulnerability & SBOM',
-      'observability': 'Observability Assertions',
-      'performance': 'Performance Profiling',
+      observability: 'Observability Assertions',
+      performance: 'Performance Profiling',
       'cost-budgets': 'Cost & Latency Budgets',
-      'deployment-drill': 'Deployment Drill'
+      'deployment-drill': 'Deployment Drill',
     };
 
     for (const [stage, result] of Object.entries(this.stages)) {
@@ -94,9 +93,15 @@ class QualificationEvaluator {
     }
 
     console.log(`\n📈 Overall Results:`);
-    console.log(`  • Passed: ${this.results.passed}/${this.results.total} stages`);
-    console.log(`  • Failed: ${this.results.failed}/${this.results.total} stages`);
-    console.log(`  • Success Rate: ${((this.results.passed / this.results.total) * 100).toFixed(1)}%`);
+    console.log(
+      `  • Passed: ${this.results.passed}/${this.results.total} stages`
+    );
+    console.log(
+      `  • Failed: ${this.results.failed}/${this.results.total} stages`
+    );
+    console.log(
+      `  • Success Rate: ${((this.results.passed / this.results.total) * 100).toFixed(1)}%`
+    );
   }
 
   /**
@@ -110,7 +115,7 @@ class QualificationEvaluator {
       latencyBudgets: this.checkLatencyBudgets(),
       securityVulnerabilities: this.checkSecurityVulnerabilities(),
       costProjection: this.checkCostProjection(),
-      observabilityMetrics: this.checkObservabilityMetrics()
+      observabilityMetrics: this.checkObservabilityMetrics(),
     };
 
     const allPassed = Object.values(criteria).every(c => c);
@@ -124,11 +129,13 @@ class QualificationEvaluator {
       console.log(`${status} ${name}`);
     }
 
-    console.log(`\n🏁 Overall Qualification: ${allPassed ? '✅ QUALIFIED' : '❌ NOT QUALIFIED'}`);
+    console.log(
+      `\n🏁 Overall Qualification: ${allPassed ? '✅ QUALIFIED' : '❌ NOT QUALIFIED'}`
+    );
 
     return {
       allPassed,
-      criteria
+      criteria,
     };
   }
 
@@ -197,7 +204,7 @@ class QualificationEvaluator {
       latencyBudgets: 'p95 latency ≤ 3s',
       securityVulnerabilities: 'No HIGH/Critical vulns',
       costProjection: 'Cost ≤ target budget',
-      observabilityMetrics: 'All metrics exposed'
+      observabilityMetrics: 'All metrics exposed',
     };
     return names[criterion] || criterion;
   }
@@ -211,7 +218,7 @@ class QualificationEvaluator {
       summary: this.results,
       stages: this.stages,
       exitCriteria: this.checkExitCriteria(),
-      recommendations: this.generateRecommendations()
+      recommendations: this.generateRecommendations(),
     };
 
     console.log('\n📋 Detailed Report:');
@@ -245,7 +252,9 @@ class QualificationEvaluator {
     }
 
     if (this.stages['property-tests'] !== 'success') {
-      recommendations.push('Fix property test failures and verify critical invariants');
+      recommendations.push(
+        'Fix property test failures and verify critical invariants'
+      );
     }
 
     if (this.stages['load-tests'] !== 'success') {
@@ -261,7 +270,9 @@ class QualificationEvaluator {
     }
 
     if (this.results.failed === 0) {
-      recommendations.push('All criteria met - ready for production deployment');
+      recommendations.push(
+        'All criteria met - ready for production deployment'
+      );
     }
 
     return recommendations;
@@ -277,7 +288,7 @@ class QualificationEvaluator {
       stages: this.stages,
       exitCriteria: this.checkExitCriteria(),
       recommendations: this.generateRecommendations(),
-      qualified: this.checkExitCriteria().allPassed
+      qualified: this.checkExitCriteria().allPassed,
     };
 
     try {
@@ -294,7 +305,7 @@ class QualificationEvaluator {
  */
 function main() {
   const evaluator = new QualificationEvaluator();
-  
+
   // Parse command line arguments
   const args = process.argv.slice(2);
   const stageResults = {};
@@ -304,7 +315,7 @@ function main() {
     if (args[i].startsWith('--')) {
       const stage = args[i].substring(2);
       const result = args[++i];
-      
+
       if (result && ['success', 'failure', 'cancelled'].includes(result)) {
         stageResults[stage] = result === 'success' ? 'success' : 'failure';
       }
@@ -313,13 +324,22 @@ function main() {
 
   // Validate required arguments
   const requiredStages = [
-    'static-analysis', 'unit-tests', 'property-tests', 'integration-e2e',
-    'load-tests', 'chaos-tests', 'security-scans', 'vulnerability-sbom',
-    'observability', 'performance', 'cost-budgets', 'deployment-drill'
+    'static-analysis',
+    'unit-tests',
+    'property-tests',
+    'integration-e2e',
+    'load-tests',
+    'chaos-tests',
+    'security-scans',
+    'vulnerability-sbom',
+    'observability',
+    'performance',
+    'cost-budgets',
+    'deployment-drill',
   ];
 
   const missingStages = requiredStages.filter(stage => !stageResults[stage]);
-  
+
   if (missingStages.length > 0) {
     console.error('❌ Missing stage results:');
     for (const stage of missingStages) {
@@ -361,4 +381,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = QualificationEvaluator; 
+module.exports = QualificationEvaluator;

@@ -5,10 +5,10 @@ import { Pool, PoolConfig } from 'pg';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  AppConfig, 
-  DatabaseConfig, 
-  RedisConfig, 
+import {
+  AppConfig,
+  DatabaseConfig,
+  RedisConfig,
   SpecCursorError,
   ValidationError,
   NotFoundError,
@@ -17,7 +17,7 @@ import {
   AsyncResult,
   HealthCheck,
   Metric,
-  AuditLog
+  AuditLog,
 } from '@speccursor/shared-types';
 
 // ============================================================================
@@ -41,16 +41,16 @@ export class Logger {
           format: winston.format.combine(
             winston.format.colorize(),
             winston.format.simple()
-          )
+          ),
         }),
         new DailyRotateFile({
           filename: `logs/${service}-%DATE%.log`,
           datePattern: 'YYYY-MM-DD',
           maxSize: '20m',
           maxFiles: '14d',
-          level: 'error'
-        })
-      ]
+          level: 'error',
+        }),
+      ],
     });
   }
 
@@ -81,7 +81,7 @@ export class Database {
 
   constructor(config: DatabaseConfig, logger: Logger) {
     this.logger = logger;
-    
+
     const poolConfig: PoolConfig = {
       host: config.host,
       port: config.port,
@@ -96,7 +96,7 @@ export class Database {
 
     this.pool = new Pool(poolConfig);
 
-    this.pool.on('error', (err) => {
+    this.pool.on('error', err => {
       this.logger.error('Unexpected error on idle client', err);
     });
   }
@@ -106,14 +106,17 @@ export class Database {
     try {
       const result = await this.pool.query(text, params);
       const duration = Date.now() - start;
-      this.logger.debug('Database query executed', { 
-        text, 
-        duration, 
-        rowCount: result.rowCount 
+      this.logger.debug('Database query executed', {
+        text,
+        duration,
+        rowCount: result.rowCount,
       });
       return result.rows;
     } catch (error) {
-      this.logger.error('Database query failed', error as Error, { text, params });
+      this.logger.error('Database query failed', error as Error, {
+        text,
+        params,
+      });
       throw error;
     }
   }
@@ -147,7 +150,7 @@ export class Redis {
 
   constructor(config: RedisConfig, logger: Logger) {
     this.logger = logger;
-    
+
     this.client = createClient({
       socket: {
         host: config.host,
@@ -157,7 +160,7 @@ export class Redis {
       database: config.db,
     });
 
-    this.client.on('error', (err) => {
+    this.client.on('error', err => {
       this.logger.error('Redis client error', err);
     });
 
@@ -235,7 +238,7 @@ export class HttpClient {
 
   constructor(baseURL: string, logger: Logger, config?: AxiosRequestConfig) {
     this.logger = logger;
-    
+
     this.client = axios.create({
       baseURL,
       timeout: 30000,
@@ -248,7 +251,7 @@ export class HttpClient {
 
     // Request interceptor
     this.client.interceptors.request.use(
-      (config) => {
+      config => {
         this.logger.debug('HTTP request', {
           method: config.method,
           url: config.url,
@@ -256,7 +259,7 @@ export class HttpClient {
         });
         return config;
       },
-      (error) => {
+      error => {
         this.logger.error('HTTP request error', error);
         return Promise.reject(error);
       }
@@ -264,14 +267,14 @@ export class HttpClient {
 
     // Response interceptor
     this.client.interceptors.response.use(
-      (response) => {
+      response => {
         this.logger.debug('HTTP response', {
           status: response.status,
           url: response.config.url,
         });
         return response;
       },
-      (error) => {
+      error => {
         this.logger.error('HTTP response error', error, {
           status: error.response?.status,
           url: error.config?.url,
@@ -286,12 +289,20 @@ export class HttpClient {
     return response.data;
   }
 
-  async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async post<T>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
     const response = await this.client.post<T>(url, data, config);
     return response.data;
   }
 
-  async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async put<T>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
     const response = await this.client.put<T>(url, data, config);
     return response.data;
   }
@@ -315,36 +326,52 @@ export class SecurityUtils {
     return crypto.createHash('sha256').update(input).digest('hex');
   }
 
-  static verifySignature(payload: string, signature: string, secret: string): boolean {
+  static verifySignature(
+    payload: string,
+    signature: string,
+    secret: string
+  ): boolean {
     const expectedSignature = crypto
       .createHmac('sha256', secret)
       .update(payload)
       .digest('hex');
-    
+
     return crypto.timingSafeEqual(
       Buffer.from(signature, 'hex'),
       Buffer.from(expectedSignature, 'hex')
     );
   }
 
-  static generateJWT(payload: Record<string, any>, secret: string, expiresIn: string = '1h'): string {
+  static generateJWT(
+    payload: Record<string, any>,
+    secret: string,
+    expiresIn: string = '1h'
+  ): string {
     const header = {
       alg: 'HS256',
-      typ: 'JWT'
+      typ: 'JWT',
     };
 
     const now = Math.floor(Date.now() / 1000);
-    const exp = now + (expiresIn.includes('h') ? parseInt(expiresIn) * 3600 : parseInt(expiresIn));
+    const exp =
+      now +
+      (expiresIn.includes('h')
+        ? parseInt(expiresIn) * 3600
+        : parseInt(expiresIn));
 
     const jwtPayload = {
       ...payload,
       iat: now,
-      exp
+      exp,
     };
 
-    const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
-    const encodedPayload = Buffer.from(JSON.stringify(jwtPayload)).toString('base64url');
-    
+    const encodedHeader = Buffer.from(JSON.stringify(header)).toString(
+      'base64url'
+    );
+    const encodedPayload = Buffer.from(JSON.stringify(jwtPayload)).toString(
+      'base64url'
+    );
+
     const signature = crypto
       .createHmac('sha256', secret)
       .update(`${encodedHeader}.${encodedPayload}`)
@@ -356,7 +383,7 @@ export class SecurityUtils {
   static verifyJWT(token: string, secret: string): Record<string, any> | null {
     try {
       const [headerB64, payloadB64, signature] = token.split('.');
-      
+
       const expectedSignature = crypto
         .createHmac('sha256', secret)
         .update(`${headerB64}.${payloadB64}`)
@@ -366,8 +393,10 @@ export class SecurityUtils {
         return null;
       }
 
-      const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString());
-      
+      const payload = JSON.parse(
+        Buffer.from(payloadB64, 'base64url').toString()
+      );
+
       if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
         return null;
       }
@@ -385,7 +414,8 @@ export class SecurityUtils {
 
 export class ValidationUtils {
   static validateUUID(uuid: string): boolean {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
   }
 
@@ -404,10 +434,7 @@ export class ValidationUtils {
   }
 
   static sanitizeString(input: string): string {
-    return input
-      .replace(/[<>]/g, '')
-      .trim()
-      .substring(0, 1000); // Limit length
+    return input.replace(/[<>]/g, '').trim().substring(0, 1000); // Limit length
   }
 
   static validateJson(json: string): boolean {
@@ -432,7 +459,11 @@ export class RateLimiter {
     this.logger = logger;
   }
 
-  async checkLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
+  async checkLimit(
+    key: string,
+    limit: number,
+    windowMs: number
+  ): Promise<boolean> {
     const now = Date.now();
     const current = this.limits.get(key);
 
@@ -471,10 +502,14 @@ export class MetricsCollector {
     this.logger = logger;
   }
 
-  recordCounter(name: string, value: number = 1, labels: Record<string, string> = {}): void {
+  recordCounter(
+    name: string,
+    value: number = 1,
+    labels: Record<string, string> = {}
+  ): void {
     const key = this.getMetricKey(name, labels);
     const existing = this.metrics.get(key);
-    
+
     if (existing && existing.type === 'counter') {
       existing.value += value;
     } else {
@@ -488,7 +523,11 @@ export class MetricsCollector {
     }
   }
 
-  recordGauge(name: string, value: number, labels: Record<string, string> = {}): void {
+  recordGauge(
+    name: string,
+    value: number,
+    labels: Record<string, string> = {}
+  ): void {
     const key = this.getMetricKey(name, labels);
     this.metrics.set(key, {
       name,
@@ -499,10 +538,14 @@ export class MetricsCollector {
     });
   }
 
-  recordHistogram(name: string, value: number, labels: Record<string, string> = {}): void {
+  recordHistogram(
+    name: string,
+    value: number,
+    labels: Record<string, string> = {}
+  ): void {
     const key = this.getMetricKey(name, labels);
     const existing = this.metrics.get(key);
-    
+
     if (existing && existing.type === 'histogram') {
       // For simplicity, we'll just track the latest value
       existing.value = value;
@@ -585,14 +628,17 @@ export class HealthChecker {
 
   async performHealthCheck(): Promise<HealthCheck> {
     const startTime = Date.now();
-    const checks: Record<string, { status: 'healthy' | 'unhealthy'; message?: string; duration?: number }> = {};
-    
+    const checks: Record<
+      string,
+      { status: 'healthy' | 'unhealthy'; message?: string; duration?: number }
+    > = {};
+
     for (const [name, check] of this.checks) {
       const checkStart = Date.now();
       try {
         const isHealthy = await check();
         const duration = Date.now() - checkStart;
-        
+
         checks[name] = {
           status: isHealthy ? 'healthy' : 'unhealthy',
           duration,
@@ -607,11 +653,13 @@ export class HealthChecker {
       }
     }
 
-    const overallStatus = Object.values(checks).every(c => c.status === 'healthy')
+    const overallStatus = Object.values(checks).every(
+      c => c.status === 'healthy'
+    )
       ? 'healthy'
       : Object.values(checks).some(c => c.status === 'unhealthy')
-      ? 'unhealthy'
-      : 'degraded';
+        ? 'unhealthy'
+        : 'degraded';
 
     return {
       status: overallStatus,
@@ -628,7 +676,11 @@ export class HealthChecker {
 // ============================================================================
 
 export class ErrorHandler {
-  static handleError(error: unknown, logger: Logger, context?: string): SpecCursorError {
+  static handleError(
+    error: unknown,
+    logger: Logger,
+    context?: string
+  ): SpecCursorError {
     if (error instanceof SpecCursorError) {
       return error;
     }
@@ -643,12 +695,11 @@ export class ErrorHandler {
       );
     }
 
-    logger.error('Unknown error type', new Error('Unknown error'), { context, error });
-    return new SpecCursorError(
-      'Internal server error',
-      'INTERNAL_ERROR',
-      500
-    );
+    logger.error('Unknown error type', new Error('Unknown error'), {
+      context,
+      error,
+    });
+    return new SpecCursorError('Internal server error', 'INTERNAL_ERROR', 500);
   }
 
   static async withErrorHandling<T>(
@@ -771,7 +822,9 @@ export function loadConfig(): AppConfig {
       sandboxEnabled: process.env.SANDBOX_ENABLED !== 'false',
       maxExecutionTime: parseInt(process.env.MAX_EXECUTION_TIME || '600'),
       memoryLimit: process.env.MEMORY_LIMIT || '2GB',
-      allowedCommands: (process.env.ALLOWED_COMMANDS || '').split(',').filter(Boolean),
+      allowedCommands: (process.env.ALLOWED_COMMANDS || '')
+        .split(',')
+        .filter(Boolean),
     },
     monitoring: {
       metricsEnabled: process.env.METRICS_ENABLED !== 'false',
@@ -783,4 +836,4 @@ export function loadConfig(): AppConfig {
   };
 
   return config;
-} 
+}

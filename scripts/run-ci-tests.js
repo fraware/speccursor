@@ -2,7 +2,7 @@
 
 /**
  * SpecCursor CI Test Runner
- * 
+ *
  * This script runs the same tests as the GitHub Actions CI pipeline
  * to help diagnose and fix issues locally before pushing.
  */
@@ -20,7 +20,7 @@ const colors = {
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
-  cyan: '\x1b[36m'
+  cyan: '\x1b[36m',
 };
 
 function log(message, color = 'reset') {
@@ -47,56 +47,13 @@ function logInfo(message) {
   log(`ℹ️  ${message}`, 'blue');
 }
 
-// Test configuration
-const testConfig = {
-  nodeVersions: [18, 20],
-  rustVersions: ['1.78', 'nightly'],
-  goVersions: ['1.22'],
-  pythonVersions: ['3.12'],
-  leanVersions: ['4.20.0']
-};
-
-// Test stages
-const stages = [
-  {
-    name: 'Static Analysis',
-    command: 'npm run lint && npm run type-check && npm run format:check',
-    description: 'Running ESLint, TypeScript checks, and Prettier validation'
-  },
-  {
-    name: 'Unit Tests',
-    command: 'npm run test:unit',
-    description: 'Running unit tests with coverage'
-  },
-  {
-    name: 'Property Tests',
-    command: 'npm run test:property',
-    description: 'Running property-based tests'
-  },
-  {
-    name: 'Integration Tests',
-    command: 'npm run test:integration',
-    description: 'Running integration tests'
-  },
-  {
-    name: 'Security Scans',
-    command: 'npm run security:scan',
-    description: 'Running security vulnerability scans'
-  },
-  {
-    name: 'Performance Tests',
-    command: 'npm run test:performance',
-    description: 'Running performance benchmarks'
-  }
-];
-
 function runCommand(command, cwd = process.cwd()) {
   try {
     logInfo(`Running: ${command}`);
     const result = execSync(command, {
       cwd,
       stdio: 'inherit',
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
     return { success: true, output: result };
   } catch (error) {
@@ -106,7 +63,7 @@ function runCommand(command, cwd = process.cwd()) {
 
 function checkDependencies() {
   logStep('Checking Dependencies');
-  
+
   // Check if Node.js is available
   try {
     const nodeVersion = execSync('node --version', { encoding: 'utf8' }).trim();
@@ -127,7 +84,9 @@ function checkDependencies() {
 
   // Check if Rust is available
   try {
-    const rustVersion = execSync('rustc --version', { encoding: 'utf8' }).trim();
+    const rustVersion = execSync('rustc --version', {
+      encoding: 'utf8',
+    }).trim();
     logSuccess(`Rust version: ${rustVersion}`);
   } catch (error) {
     logWarning('Rust is not installed or not in PATH');
@@ -143,7 +102,9 @@ function checkDependencies() {
 
   // Check if Python is available
   try {
-    const pythonVersion = execSync('python --version', { encoding: 'utf8' }).trim();
+    const pythonVersion = execSync('python --version', {
+      encoding: 'utf8',
+    }).trim();
     logSuccess(`Python version: ${pythonVersion}`);
   } catch (error) {
     logWarning('Python is not installed or not in PATH');
@@ -154,7 +115,7 @@ function checkDependencies() {
 
 function installDependencies() {
   logStep('Installing Dependencies');
-  
+
   // Install npm dependencies
   const npmResult = runCommand('npm install');
   if (!npmResult.success) {
@@ -178,7 +139,7 @@ function installDependencies() {
 
 function runStaticAnalysis() {
   logStep('Stage 1: Static Analysis');
-  
+
   let allPassed = true;
 
   // ESLint
@@ -214,7 +175,10 @@ function runStaticAnalysis() {
   // Rust clippy if available
   if (fs.existsSync('workers/rust-worker/Cargo.toml')) {
     logInfo('Running Rust clippy...');
-    const clippyResult = runCommand('cargo clippy --all-targets --all-features -- -D warnings', 'workers/rust-worker');
+    const clippyResult = runCommand(
+      'cargo clippy --all-targets --all-features -- -D warnings',
+      'workers/rust-worker'
+    );
     if (clippyResult.success) {
       logSuccess('Rust clippy passed');
     } else {
@@ -227,17 +191,17 @@ function runStaticAnalysis() {
 
 function runUnitTests() {
   logStep('Stage 2: Unit Tests');
-  
+
   let allPassed = true;
 
   // Run tests for each package
   const packages = [
     'apps/github-app',
-    'apps/ai-service', 
+    'apps/ai-service',
     'apps/controller',
     'packages/shared-types',
     'packages/shared-utils',
-    'packages/shared-config'
+    'packages/shared-config',
   ];
 
   for (const pkg of packages) {
@@ -270,7 +234,7 @@ function runUnitTests() {
 
 function runPropertyTests() {
   logStep('Stage 3: Property Tests');
-  
+
   let allPassed = true;
 
   // Run property tests
@@ -287,8 +251,8 @@ function runPropertyTests() {
 
 function runSecurityScans() {
   logStep('Stage 4: Security Scans');
-  
-  let allPassed = true;
+
+  const allPassed = true;
 
   // Run security audit
   logInfo('Running npm audit...');
@@ -315,7 +279,7 @@ function runSecurityScans() {
 
 function generateReport(results) {
   logStep('Test Results Summary');
-  
+
   const totalStages = Object.keys(results).length;
   const passedStages = Object.values(results).filter(Boolean).length;
   const failedStages = totalStages - passedStages;
@@ -328,7 +292,9 @@ function generateReport(results) {
     logSuccess('🎉 All CI stages passed! Ready for deployment.');
     return true;
   } else {
-    logError(`❌ ${failedStages} stage(s) failed. Please fix the issues above.`);
+    logError(
+      `❌ ${failedStages} stage(s) failed. Please fix the issues above.`
+    );
     return false;
   }
 }
@@ -384,5 +350,5 @@ module.exports = {
   runPropertyTests,
   runSecurityScans,
   checkDependencies,
-  installDependencies
-}; 
+  installDependencies,
+};

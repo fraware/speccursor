@@ -2,10 +2,10 @@
 
 /**
  * SpecCursor AI Patch Generation Script
- * 
+ *
  * This script uses Anthropic's Claude-Sonnet-4 to generate patches for failing tests,
  * applies them using Morph's API, and handles failures with comprehensive logging.
- * 
+ *
  * Usage:
  *   node scripts/ai-patch.ts --test-output test-results.json --ecosystem node
  *   node scripts/ai-patch.ts --test-output test-results.json --ecosystem rust --dry-run
@@ -21,13 +21,13 @@ import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import { Logger, Metrics, ErrorHandler } from '@speccursor/shared-utils';
 import { ConfigManager } from '@speccursor/shared-config';
-import { 
-  AIPatchRequest, 
-  AIPatchResponse, 
-  TestResult, 
+import {
+  AIPatchRequest,
+  AIPatchResponse,
+  TestResult,
   Ecosystem,
   PatchStatus,
-  SpecCursorError 
+  SpecCursorError,
 } from '@speccursor/shared-types';
 
 const execAsync = promisify(exec);
@@ -70,20 +70,21 @@ class AIPatchGenerator {
     this.config = new ConfigManager();
     this.logger = new Logger('ai-patch-generator');
     this.metrics = new Metrics();
-    
+
     // Initialize Anthropic client
     const anthropicApiKey = this.config.get('ANTHROPIC_API_KEY');
     if (!anthropicApiKey) {
       throw new SpecCursorError('ANTHROPIC_API_KEY is required');
     }
-    
+
     this.anthropic = new Anthropic({
       apiKey: anthropicApiKey,
     });
 
     // Initialize Morph API configuration
     this.morphApiKey = this.config.get('MORPH_API_KEY') || '';
-    this.morphApiUrl = this.config.get('MORPH_API_URL') || 'https://api.morph.dev';
+    this.morphApiUrl =
+      this.config.get('MORPH_API_URL') || 'https://api.morph.dev';
   }
 
   /**
@@ -97,7 +98,7 @@ class AIPatchGenerator {
     this.logger.info('Starting AI patch generation', {
       ecosystem: options.ecosystem,
       testOutputPath: options.testOutputPath,
-      dryRun: options.dryRun
+      dryRun: options.dryRun,
     });
 
     try {
@@ -118,13 +119,13 @@ class AIPatchGenerator {
             applicationTime: 0,
             totalTime: Date.now() - startTime,
             tokensUsed: 0,
-            retries: 0
-          }
+            retries: 0,
+          },
         };
       }
 
       this.logger.info(`Found ${failingTests.length} failing tests`, {
-        failingTests: failingTests.map(t => t.name)
+        failingTests: failingTests.map(t => t.name),
       });
 
       // Generate patch with retries
@@ -136,8 +137,10 @@ class AIPatchGenerator {
         } catch (error) {
           retries++;
           lastError = error instanceof Error ? error.message : String(error);
-          this.logger.warn(`Patch generation attempt ${retries} failed`, { error: lastError });
-          
+          this.logger.warn(`Patch generation attempt ${retries} failed`, {
+            error: lastError,
+          });
+
           if (retries < options.maxRetries) {
             await this.delay(1000 * retries); // Exponential backoff
           }
@@ -145,7 +148,9 @@ class AIPatchGenerator {
       }
 
       if (!patch) {
-        throw new SpecCursorError(`Failed to generate patch after ${options.maxRetries} attempts: ${lastError}`);
+        throw new SpecCursorError(
+          `Failed to generate patch after ${options.maxRetries} attempts: ${lastError}`
+        );
       }
 
       const generationTime = Date.now() - startTime;
@@ -158,7 +163,7 @@ class AIPatchGenerator {
         const applyStartTime = Date.now();
         applied = await this.applyPatchWithMorph(patch, options.ecosystem);
         applicationTime = Date.now() - applyStartTime;
-        
+
         if (applied) {
           this.logger.info('Patch applied successfully');
         } else {
@@ -169,7 +174,9 @@ class AIPatchGenerator {
       }
 
       // Re-run tests to validate patch
-      const testResultsAfterPatch = await this.runTestsAfterPatch(options.ecosystem);
+      const testResultsAfterPatch = await this.runTestsAfterPatch(
+        options.ecosystem
+      );
 
       const totalTime = Date.now() - startTime;
       const metrics = {
@@ -177,7 +184,7 @@ class AIPatchGenerator {
         applicationTime,
         totalTime,
         tokensUsed: 0, // Would be updated from Claude response
-        retries
+        retries,
       };
 
       this.metrics.record('ai_patch_generation_time', generationTime);
@@ -191,15 +198,14 @@ class AIPatchGenerator {
         patch,
         applied,
         testResults: testResultsAfterPatch,
-        metrics
+        metrics,
       };
-
     } catch (error) {
       const totalTime = Date.now() - startTime;
-      this.logger.error('AI patch generation failed', { 
+      this.logger.error('AI patch generation failed', {
         error: error instanceof Error ? error.message : String(error),
         totalTime,
-        retries
+        retries,
       });
 
       this.metrics.record('ai_patch_failure', 1);
@@ -213,8 +219,8 @@ class AIPatchGenerator {
           applicationTime: 0,
           totalTime,
           tokensUsed: 0,
-          retries
-        }
+          retries,
+        },
       };
     }
   }
@@ -225,29 +231,36 @@ class AIPatchGenerator {
   private async loadTestResults(testOutputPath: string): Promise<TestResult[]> {
     try {
       if (!existsSync(testOutputPath)) {
-        throw new SpecCursorError(`Test output file not found: ${testOutputPath}`);
+        throw new SpecCursorError(
+          `Test output file not found: ${testOutputPath}`
+        );
       }
 
       const content = await readFile(testOutputPath, 'utf-8');
       const testResults = JSON.parse(content) as TestResult[];
-      
+
       this.logger.info(`Loaded ${testResults.length} test results`);
       return testResults;
     } catch (error) {
-      throw new SpecCursorError(`Failed to load test results: ${error instanceof Error ? error.message : String(error)}`);
+      throw new SpecCursorError(
+        `Failed to load test results: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
   /**
    * Generate patch using Claude-Sonnet-4
    */
-  private async generatePatchWithClaude(failingTests: TestResult[], options: PatchOptions): Promise<string> {
+  private async generatePatchWithClaude(
+    failingTests: TestResult[],
+    options: PatchOptions
+  ): Promise<string> {
     const prompt = this.buildPrompt(failingTests, options.ecosystem);
-    
+
     this.logger.info('Generating patch with Claude', {
       model: options.model,
       temperature: options.temperature,
-      maxTokens: options.maxTokens
+      maxTokens: options.maxTokens,
     });
 
     const response = await this.anthropic.messages.create({
@@ -257,13 +270,14 @@ class AIPatchGenerator {
       messages: [
         {
           role: 'user',
-          content: prompt
-        }
-      ]
+          content: prompt,
+        },
+      ],
     });
 
-    const patch = response.content[0]?.type === 'text' ? response.content[0].text : '';
-    
+    const patch =
+      response.content[0]?.type === 'text' ? response.content[0].text : '';
+
     if (!patch) {
       throw new SpecCursorError('No patch generated by Claude');
     }
@@ -274,7 +288,7 @@ class AIPatchGenerator {
 
     this.logger.info('Patch generated by Claude', {
       patchLength: extractedPatch.length,
-      tokensUsed: response.usage?.output_tokens || 0
+      tokensUsed: response.usage?.output_tokens || 0,
     });
 
     return extractedPatch;
@@ -283,13 +297,20 @@ class AIPatchGenerator {
   /**
    * Build prompt for Claude based on failing tests and ecosystem
    */
-  private buildPrompt(failingTests: TestResult[], ecosystem: Ecosystem): string {
-    const testDetails = failingTests.map(test => `
+  private buildPrompt(
+    failingTests: TestResult[],
+    ecosystem: Ecosystem
+  ): string {
+    const testDetails = failingTests
+      .map(
+        test => `
 Test: ${test.name}
 File: ${test.file}
 Error: ${test.error}
 Output: ${test.output}
-`).join('\n');
+`
+      )
+      .join('\n');
 
     const ecosystemContext = this.getEcosystemContext(ecosystem);
 
@@ -323,7 +344,7 @@ This is a Node.js project using pnpm. Common fixes include:
 - Fixing async/await usage
 - Updating test assertions for new API versions
 - Handling breaking changes in dependencies`;
-      
+
       case Ecosystem.RUST:
         return `
 This is a Rust project using Cargo. Common fixes include:
@@ -331,7 +352,7 @@ This is a Rust project using Cargo. Common fixes include:
 - Fixing lifetime annotations
 - Updating error handling patterns
 - Handling breaking changes in dependencies`;
-      
+
       case Ecosystem.PYTHON:
         return `
 This is a Python project. Common fixes include:
@@ -339,7 +360,7 @@ This is a Python project. Common fixes include:
 - Fixing type annotations
 - Updating test assertions
 - Handling breaking changes in dependencies`;
-      
+
       case Ecosystem.GO:
         return `
 This is a Go project using modules. Common fixes include:
@@ -347,7 +368,7 @@ This is a Go project using modules. Common fixes include:
 - Fixing interface implementations
 - Updating error handling
 - Handling breaking changes in dependencies`;
-      
+
       case Ecosystem.DOCKER:
         return `
 This is a Docker project. Common fixes include:
@@ -355,7 +376,7 @@ This is a Docker project. Common fixes include:
 - Fixing layer caching issues
 - Updating build arguments
 - Handling breaking changes in base images`;
-      
+
       default:
         return '';
     }
@@ -364,50 +385,59 @@ This is a Docker project. Common fixes include:
   /**
    * Apply patch using Morph API
    */
-  private async applyPatchWithMorph(patch: string, ecosystem: Ecosystem): Promise<boolean> {
+  private async applyPatchWithMorph(
+    patch: string,
+    ecosystem: Ecosystem
+  ): Promise<boolean> {
     if (!this.morphApiKey) {
-      this.logger.warn('Morph API key not configured, skipping patch application');
+      this.logger.warn(
+        'Morph API key not configured, skipping patch application'
+      );
       return false;
     }
 
     try {
       this.logger.info('Applying patch with Morph API');
 
-      const response = await axios.post(`${this.morphApiUrl}/apply`, {
-        patch,
-        ecosystem,
-        options: {
-          dryRun: false,
-          backup: true,
-          validate: true
-        }
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.morphApiKey}`,
-          'Content-Type': 'application/json'
+      const response = await axios.post(
+        `${this.morphApiUrl}/apply`,
+        {
+          patch,
+          ecosystem,
+          options: {
+            dryRun: false,
+            backup: true,
+            validate: true,
+          },
         },
-        timeout: 30000 // 30 seconds
-      });
+        {
+          headers: {
+            Authorization: `Bearer ${this.morphApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000, // 30 seconds
+        }
+      );
 
       const result = response.data;
-      
+
       if (result.success) {
         this.logger.info('Patch applied successfully via Morph API', {
           filesChanged: result.filesChanged,
           linesAdded: result.linesAdded,
-          linesRemoved: result.linesRemoved
+          linesRemoved: result.linesRemoved,
         });
         return true;
       } else {
         this.logger.error('Patch application failed via Morph API', {
           error: result.error,
-          details: result.details
+          details: result.details,
         });
         return false;
       }
     } catch (error) {
       this.logger.error('Failed to apply patch via Morph API', {
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
       return false;
     }
@@ -416,26 +446,30 @@ This is a Docker project. Common fixes include:
   /**
    * Run tests after patch application
    */
-  private async runTestsAfterPatch(ecosystem: Ecosystem): Promise<TestResult[]> {
+  private async runTestsAfterPatch(
+    ecosystem: Ecosystem
+  ): Promise<TestResult[]> {
     try {
       this.logger.info('Running tests after patch application');
 
       const testCommand = this.getTestCommand(ecosystem);
-      const { stdout, stderr } = await execAsync(testCommand, { timeout: 300000 }); // 5 minutes
+      const { stdout, stderr } = await execAsync(testCommand, {
+        timeout: 300000,
+      }); // 5 minutes
 
       // Parse test results based on ecosystem
       const testResults = this.parseTestResults(stdout, stderr, ecosystem);
-      
+
       this.logger.info(`Tests completed after patch`, {
         total: testResults.length,
         passed: testResults.filter(t => t.passed).length,
-        failed: testResults.filter(t => !t.passed).length
+        failed: testResults.filter(t => !t.passed).length,
       });
 
       return testResults;
     } catch (error) {
       this.logger.error('Failed to run tests after patch', {
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
       return [];
     }
@@ -464,9 +498,13 @@ This is a Docker project. Common fixes include:
   /**
    * Parse test results from command output
    */
-  private parseTestResults(stdout: string, stderr: string, ecosystem: Ecosystem): TestResult[] {
+  private parseTestResults(
+    stdout: string,
+    stderr: string,
+    ecosystem: Ecosystem
+  ): TestResult[] {
     const results: TestResult[] = [];
-    
+
     // Simple parsing - in practice, this would be more sophisticated
     const lines = stdout.split('\n');
     let currentTest: Partial<TestResult> = {};
@@ -480,7 +518,7 @@ This is a Docker project. Common fixes include:
             passed: true,
             error: '',
             output: currentTest.output || '',
-            duration: currentTest.duration || 0
+            duration: currentTest.duration || 0,
           });
           currentTest = {};
         }
@@ -492,7 +530,7 @@ This is a Docker project. Common fixes include:
             passed: false,
             error: currentTest.error || '',
             output: currentTest.output || '',
-            duration: currentTest.duration || 0
+            duration: currentTest.duration || 0,
           });
           currentTest = {};
         }
@@ -529,7 +567,7 @@ async function main() {
     timeout: 300000, // 5 minutes
     model: 'claude-3-sonnet-20240229',
     temperature: 0.1,
-    maxTokens: 4000
+    maxTokens: 4000,
   };
 
   // Parse command line arguments
@@ -613,7 +651,7 @@ Examples:
     if (result.success) {
       console.log('✅ AI patch generation completed successfully');
       console.log(`📊 Metrics:`, result.metrics);
-      
+
       if (result.patch) {
         console.log(`🔧 Patch generated (${result.patch.length} characters)`);
         if (options.dryRun) {
@@ -624,7 +662,7 @@ Examples:
           console.log('❌ Patch application failed');
         }
       }
-      
+
       if (result.testResults) {
         const passed = result.testResults.filter(t => t.passed).length;
         const total = result.testResults.length;
@@ -636,7 +674,10 @@ Examples:
       process.exit(1);
     }
   } catch (error) {
-    console.error('❌ Fatal error:', error instanceof Error ? error.message : String(error));
+    console.error(
+      '❌ Fatal error:',
+      error instanceof Error ? error.message : String(error)
+    );
     process.exit(1);
   }
 }
@@ -649,4 +690,4 @@ if (require.main === module) {
   });
 }
 
-export { AIPatchGenerator, PatchOptions, PatchResult }; 
+export { AIPatchGenerator, PatchOptions, PatchResult };

@@ -62,9 +62,7 @@ describe('Controller Service Unit Tests', () => {
 
   describe('Health Check', () => {
     it('should return healthy status', async () => {
-      const response = await request(app)
-        .get('/health')
-        .expect(200);
+      const response = await request(app).get('/health').expect(200);
 
       expect(response.body).toHaveProperty('status', 'healthy');
       expect(response.body).toHaveProperty('service', 'controller');
@@ -118,9 +116,7 @@ describe('Controller Service Unit Tests', () => {
     });
 
     it('should list upgrades', async () => {
-      const response = await request(app)
-        .get('/api/v1/upgrades')
-        .expect(200);
+      const response = await request(app).get('/api/v1/upgrades').expect(200);
 
       expect(response.body).toHaveProperty('upgrades');
       expect(response.body).toHaveProperty('pagination');
@@ -130,7 +126,7 @@ describe('Controller Service Unit Tests', () => {
   describe('Database Operations', () => {
     it('should connect to database', () => {
       const mockPool = require('pg').Pool;
-      
+
       expect(mockPool).toHaveBeenCalled();
     });
 
@@ -149,7 +145,7 @@ describe('Controller Service Unit Tests', () => {
   describe('Redis Operations', () => {
     it('should connect to Redis', () => {
       const mockRedis = require('redis');
-      
+
       expect(mockRedis.createClient).toHaveBeenCalled();
     });
 
@@ -186,22 +182,20 @@ describe('Controller Service Unit Tests', () => {
   describe('Logging', () => {
     it('should log requests', () => {
       const mockLogger = createLogger();
-      
+
       expect(mockLogger.info).toBeDefined();
     });
 
     it('should log errors', () => {
       const mockLogger = createLogger();
-      
+
       expect(mockLogger.error).toBeDefined();
     });
   });
 
   describe('Metrics', () => {
     it('should expose metrics endpoint', async () => {
-      const response = await request(app)
-        .get('/metrics')
-        .expect(200);
+      const response = await request(app).get('/metrics').expect(200);
 
       expect(response.text).toContain('speccursor_');
     });
@@ -250,15 +244,15 @@ describe('Controller Service Unit Tests', () => {
   describe('Configuration', () => {
     it('should load environment variables', () => {
       const mockDotenv = require('dotenv');
-      
+
       expect(mockDotenv.config).toHaveBeenCalled();
     });
 
     it('should use default port if not specified', () => {
       delete process.env.PORT;
-      
+
       // Test default port configuration
       expect(process.env.PORT).toBeUndefined();
     });
   });
-}); 
+});

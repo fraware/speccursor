@@ -2,7 +2,7 @@ name: SpecCursor Qualification & Optimization Suite
 
 on:
   push:
-    branches: [ main, develop, release/* ]
+    branches: [main, develop, release/*]
     paths:
       - 'apps/**'
       - 'packages/**'
@@ -14,7 +14,7 @@ on:
       - 'security/**'
       - '.github/workflows/**'
   pull_request:
-    branches: [ main, develop, release/* ]
+    branches: [main, develop, release/*]
     paths:
       - 'apps/**'
       - 'packages/**'
@@ -401,7 +401,19 @@ jobs:
     needs: property-tests
     strategy:
       matrix:
-        scenario: [basic-upgrade, ai-patch, formal-proof, full-workflow, dependency-bump, test-failure, claude-patch, lean-reproof, green-build, branch-merge]
+        scenario:
+          [
+            basic-upgrade,
+            ai-patch,
+            formal-proof,
+            full-workflow,
+            dependency-bump,
+            test-failure,
+            claude-patch,
+            lean-reproof,
+            green-build,
+            branch-merge,
+          ]
 
     services:
       postgres:
@@ -493,7 +505,13 @@ jobs:
     needs: integration-e2e
     strategy:
       matrix:
-        scenario: [upgrade-workflow, ai-patch-generation, formal-verification, full-pipeline]
+        scenario:
+          [
+            upgrade-workflow,
+            ai-patch-generation,
+            formal-verification,
+            full-pipeline,
+          ]
 
     steps:
       - name: Checkout code
@@ -546,7 +564,14 @@ jobs:
     needs: load-tests
     strategy:
       matrix:
-        experiment: [worker-failure, redis-failure, network-partition, database-failure, memory-pressure]
+        experiment:
+          [
+            worker-failure,
+            redis-failure,
+            network-partition,
+            database-failure,
+            memory-pressure,
+          ]
 
     steps:
       - name: Checkout code
@@ -619,7 +644,7 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
         with:
-          category: "/language:${{matrix.language}}"
+          category: '/language:${{matrix.language}}'
 
       # Semgrep Analysis
       - name: Run Semgrep
@@ -964,7 +989,21 @@ jobs:
     name: Qualification Gate
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [static-analysis, unit-tests, property-tests, integration-e2e, load-tests, chaos-tests, security-scans, vulnerability-sbom, observability, performance, cost-budgets, deployment-drill]
+    needs:
+      [
+        static-analysis,
+        unit-tests,
+        property-tests,
+        integration-e2e,
+        load-tests,
+        chaos-tests,
+        security-scans,
+        vulnerability-sbom,
+        observability,
+        performance,
+        cost-budgets,
+        deployment-drill,
+      ]
     if: always()
 
     steps:
@@ -998,7 +1037,7 @@ jobs:
         run: |
           # Sign Docker image with cosign
           cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          
+
           # Create release candidate tag
           git tag v${{ github.run_number }}-rc.1
           git push origin v${{ github.run_number }}-rc.1
@@ -1031,4 +1070,4 @@ jobs:
 
 # Required status checks for branch protection
 # These must pass before merging PRs to main/develop/release/*
-# Configure in repository settings > Branches > Branch protection rules 
+# Configure in repository settings > Branches > Branch protection rules

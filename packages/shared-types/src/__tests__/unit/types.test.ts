@@ -20,7 +20,7 @@ import {
   Metric,
   AuditLog,
   SystemConfig,
-} from '../index';
+} from '../../index';
 
 describe('Shared Types Unit Tests', () => {
   describe('Ecosystem Enum', () => {
@@ -118,7 +118,7 @@ describe('Shared Types Unit Tests', () => {
       const validProof = {
         id: '123e4567-e89b-12d3-a456-426614174000',
         upgradeId: '123e4567-e89b-12d3-a456-426614174000',
-        proofType: 'formal',
+        proofType: 'invariant' as const,
         status: 'pending' as const,
         leanCode: 'example lean code',
         proofResult: { verified: true },
@@ -139,7 +139,7 @@ describe('Shared Types Unit Tests', () => {
       const validPatch = {
         id: '123e4567-e89b-12d3-a456-426614174000',
         upgradeId: '123e4567-e89b-12d3-a456-426614174000',
-        patchType: 'ai-generated',
+        patchType: 'regression_fix' as const,
         status: 'pending' as const,
         originalCode: 'original code',
         patchedCode: 'patched code',
@@ -175,16 +175,12 @@ describe('Shared Types Unit Tests', () => {
     it('should validate valid job data', () => {
       const validJob = {
         id: '123e4567-e89b-12d3-a456-426614174000',
-        jobType: 'upgrade',
+        type: 'upgrade' as const,
         status: 'pending' as const,
-        payload: { data: 'test' },
-        result: { success: true },
         priority: 1,
-        retryCount: 0,
-        maxRetries: 3,
+        data: { test: 'data' },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        startedAt: null,
         completedAt: null,
         errorMessage: null,
       };
@@ -197,10 +193,9 @@ describe('Shared Types Unit Tests', () => {
   describe('Metric Schema', () => {
     it('should validate valid metric data', () => {
       const validMetric = {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        metricName: 'upgrade_duration_seconds',
-        metricValue: 1.5,
-        metricType: 'gauge' as const,
+        name: 'upgrade_duration_seconds',
+        value: 1.5,
+        type: 'gauge' as const,
         labels: { service: 'controller' },
         timestamp: new Date().toISOString(),
       };
@@ -218,10 +213,10 @@ describe('Shared Types Unit Tests', () => {
         resourceType: 'upgrade',
         resourceId: '123e4567-e89b-12d3-a456-426614174000',
         userId: 'user123',
-        details: { key: 'value' },
+        metadata: { key: 'value' },
         ipAddress: '127.0.0.1',
         userAgent: 'test-agent',
-        createdAt: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       };
 
       const result = AuditLogSchema.safeParse(validAuditLog);
@@ -232,11 +227,32 @@ describe('Shared Types Unit Tests', () => {
   describe('SystemConfig Schema', () => {
     it('should validate valid system config data', () => {
       const validConfig = {
-        key: 'test-config',
-        value: { setting: 'value' },
-        description: 'Test configuration',
-        updatedAt: new Date().toISOString(),
-        updatedBy: 'admin',
+        port: 3000,
+        environment: 'development',
+        database: {
+          host: 'localhost',
+          port: 5432,
+          database: 'test',
+          username: 'user',
+          password: 'pass',
+          ssl: false,
+          maxConnections: 10,
+          idleTimeout: 300,
+        },
+        redis: {
+          host: 'localhost',
+          port: 6379,
+          password: undefined,
+          db: 0,
+          keyPrefix: 'test:',
+        },
+        monitoring: {
+          metricsEnabled: true,
+          tracingEnabled: false,
+          logLevel: 'info',
+          prometheusPort: 9090,
+          jaegerEndpoint: undefined,
+        },
       };
 
       const result = SystemConfigSchema.safeParse(validConfig);
@@ -302,4 +318,4 @@ describe('Shared Types Unit Tests', () => {
       expect(result.success).toBe(true);
     });
   });
-}); 
+});

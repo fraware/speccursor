@@ -62,16 +62,19 @@ Each RFC should follow this structure:
 ## Implementation Plan
 
 ### Phase 1: Template Creation
+
 - [ ] Create RFC template
 - [ ] Document RFC process
 - [ ] Set up RFC repository structure
 
 ### Phase 2: Process Implementation
+
 - [ ] Implement RFC review process
 - [ ] Set up RFC tracking
 - [ ] Train team on RFC process
 
 ### Phase 3: Process Refinement
+
 - [ ] Gather feedback on RFC process
 - [ ] Refine template and process
 - [ ] Document lessons learned
@@ -126,4 +129,4 @@ N/A - This is a template RFC.
 4. **Impact**: What is the impact on existing functionality?
 5. **Testing**: Is the testing strategy adequate?
 6. **Documentation**: Are documentation requirements clear?
-7. **Migration**: Are migration steps clear for breaking changes? 
+7. **Migration**: Are migration steps clear for breaking changes?

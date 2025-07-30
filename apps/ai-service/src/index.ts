@@ -27,14 +27,14 @@ const logger = createLogger({
   defaultMeta: { service: 'ai-service' },
   transports: [
     new transports.Console({
-      format: format.combine(
-        format.colorize(),
-        format.simple()
-      )
+      format: format.combine(format.colorize(), format.simple()),
     }),
-    new transports.File({ filename: 'logs/ai-service-error.log', level: 'error' }),
-    new transports.File({ filename: 'logs/ai-service-combined.log' })
-  ]
+    new transports.File({
+      filename: 'logs/ai-service-error.log',
+      level: 'error',
+    }),
+    new transports.File({ filename: 'logs/ai-service-combined.log' }),
+  ],
 });
 
 // Initialize metrics
@@ -42,12 +42,14 @@ collectDefaultMetrics({ register });
 
 // Initialize Redis client
 const redisClient = Redis.createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
+  url: process.env.REDIS_URL || 'redis://localhost:6379',
 });
 
 // Initialize PostgreSQL pool
 const pgPool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://speccursor:speccursor_dev@localhost:5432/speccursor',
+  connectionString:
+    process.env.DATABASE_URL ||
+    'postgresql://speccursor:speccursor_dev@localhost:5432/speccursor',
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
@@ -64,16 +66,20 @@ const PORT = process.env.PORT || 3002;
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || [
+      'http://localhost:3000',
+    ],
+    credentials: true,
+  })
+);
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 50, // limit each IP to 50 requests per windowMs (lower for AI service)
-  message: 'Too many requests from this IP, please try again later.'
+  message: 'Too many requests from this IP, please try again later.',
 });
 app.use(limiter);
 
@@ -88,7 +94,7 @@ app.use((req, res, next) => {
     method: req.method,
     url: req.url,
     ip: req.ip,
-    userAgent: req.get('User-Agent')
+    userAgent: req.get('User-Agent'),
   });
   next();
 });
@@ -99,7 +105,7 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'ai-service',
-    version: process.env.npm_package_version || '0.1.0'
+    version: process.env.npm_package_version || '0.1.0',
   });
 });
 
@@ -123,23 +129,23 @@ const validatePatchRequest = [
   (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         errors: errors.array(),
-        message: 'Invalid request data'
+        message: 'Invalid request data',
       });
     }
     next();
-  }
+  },
 ];
 
 // Generate AI patch endpoint
 app.post('/api/v1/patches', validatePatchRequest, async (req, res) => {
   try {
     const { upgradeId, originalCode, testFailure, ecosystem } = req.body;
-    
+
     // Generate patch ID
     const patchId = uuidv4();
-    
+
     // Create patch record
     const patch = {
       id: patchId,
@@ -148,7 +154,7 @@ app.post('/api/v1/patches', validatePatchRequest, async (req, res) => {
       status: 'generating',
       originalCode,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     // Store in database
@@ -157,7 +163,7 @@ app.post('/api/v1/patches', validatePatchRequest, async (req, res) => {
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
-    
+
     await pgPool.query(query, [
       patch.id,
       patch.upgradeId,
@@ -165,7 +171,7 @@ app.post('/api/v1/patches', validatePatchRequest, async (req, res) => {
       patch.status,
       patch.originalCode,
       patch.createdAt,
-      patch.updatedAt
+      patch.updatedAt,
     ]);
 
     // Generate AI patch asynchronously
@@ -174,14 +180,13 @@ app.post('/api/v1/patches', validatePatchRequest, async (req, res) => {
     res.status(202).json({
       id: patchId,
       status: 'generating',
-      message: 'AI patch generation started'
+      message: 'AI patch generation started',
     });
-
   } catch (error) {
     logger.error('Error creating AI patch request', { error });
     res.status(500).json({
       error: 'Internal server error',
-      message: 'Failed to create AI patch request'
+      message: 'Failed to create AI patch request',
     });
   }
 });
@@ -190,19 +195,19 @@ app.post('/api/v1/patches', validatePatchRequest, async (req, res) => {
 app.get('/api/v1/patches/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const query = 'SELECT * FROM ai_patches WHERE id = $1';
     const result = await pgPool.query(query, [id]);
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({
         error: 'Not found',
-        message: 'Patch not found'
+        message: 'Patch not found',
       });
     }
 
     const patch = result.rows[0];
-    
+
     res.json({
       id: patch.id,
       upgradeId: patch.upgrade_id,
@@ -215,22 +220,31 @@ app.get('/api/v1/patches/:id', async (req, res) => {
       createdAt: patch.created_at,
       updatedAt: patch.updated_at,
       completedAt: patch.completed_at,
-      errorMessage: patch.error_message
+      errorMessage: patch.error_message,
     });
-
   } catch (error) {
     logger.error('Error fetching patch status', { error });
     res.status(500).json({
       error: 'Internal server error',
-      message: 'Failed to fetch patch status'
+      message: 'Failed to fetch patch status',
     });
   }
 });
 
 // AI patch generation function
-async function generateAIPatch(patchId: string, upgradeId: string, originalCode: string, testFailure: string, ecosystem: string) {
+async function generateAIPatch(
+  patchId: string,
+  upgradeId: string,
+  originalCode: string,
+  testFailure: string,
+  ecosystem: string
+) {
   try {
-    logger.info('Starting AI patch generation', { patchId, upgradeId, ecosystem });
+    logger.info('Starting AI patch generation', {
+      patchId,
+      upgradeId,
+      ecosystem,
+    });
 
     // Update status to generating
     await pgPool.query(
@@ -272,9 +286,9 @@ Format your response as JSON:
       messages: [
         {
           role: 'user',
-          content: prompt
-        }
-      ]
+          content: prompt,
+        },
+      ],
     });
 
     const response = message.content[0];
@@ -284,7 +298,7 @@ Format your response as JSON:
 
     // Parse Claude's response
     const aiResponse = JSON.parse(response.text);
-    
+
     // Generate diff
     const diff = createDiff(originalCode, aiResponse.patchedCode);
 
@@ -302,18 +316,17 @@ Format your response as JSON:
         JSON.stringify(aiResponse),
         new Date(),
         new Date(),
-        patchId
+        patchId,
       ]
     );
 
-    logger.info('AI patch generation completed', { 
-      patchId, 
-      confidenceScore: aiResponse.confidenceScore 
+    logger.info('AI patch generation completed', {
+      patchId,
+      confidenceScore: aiResponse.confidenceScore,
     });
-
   } catch (error) {
     logger.error('Error generating AI patch', { error, patchId });
-    
+
     // Update database with error
     await pgPool.query(
       `UPDATE ai_patches 
@@ -329,28 +342,28 @@ app.get('/api/v1/patches', async (req, res) => {
   try {
     const { page = 1, limit = 20, status, upgradeId } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
-    
+
     let query = 'SELECT * FROM ai_patches WHERE 1=1';
     const params: any[] = [];
     let paramIndex = 1;
-    
+
     if (status) {
       query += ` AND status = $${paramIndex}`;
       params.push(status);
       paramIndex++;
     }
-    
+
     if (upgradeId) {
       query += ` AND upgrade_id = $${paramIndex}`;
       params.push(upgradeId);
       paramIndex++;
     }
-    
+
     query += ` ORDER BY created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
     params.push(limit, offset);
-    
+
     const result = await pgPool.query(query, params);
-    
+
     res.json({
       patches: result.rows.map(row => ({
         id: row.id,
@@ -360,38 +373,44 @@ app.get('/api/v1/patches', async (req, res) => {
         confidenceScore: row.confidence_score,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
-        completedAt: row.completed_at
+        completedAt: row.completed_at,
       })),
       pagination: {
         page: Number(page),
         limit: Number(limit),
-        total: result.rows.length
-      }
+        total: result.rows.length,
+      },
     });
-
   } catch (error) {
     logger.error('Error fetching patches', { error });
     res.status(500).json({
       error: 'Internal server error',
-      message: 'Failed to fetch patches'
+      message: 'Failed to fetch patches',
     });
   }
 });
 
 // Error handling middleware
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  logger.error('Unhandled error', { error: err.message, stack: err.stack });
-  res.status(500).json({
-    error: 'Internal server error',
-    message: 'An unexpected error occurred'
-  });
-});
+app.use(
+  (
+    err: Error,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    logger.error('Unhandled error', { error: err.message, stack: err.stack });
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'An unexpected error occurred',
+    });
+  }
+);
 
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({
     error: 'Not found',
-    message: 'Endpoint not found'
+    message: 'Endpoint not found',
   });
 });
 
@@ -401,16 +420,16 @@ async function startServer() {
     // Test database connection
     await pgPool.query('SELECT NOW()');
     logger.info('Database connection established');
-    
+
     // Test Redis connection
     await redisClient.connect();
     logger.info('Redis connection established');
-    
+
     // Test Anthropic API connection
     if (!process.env.ANTHROPIC_API_KEY) {
       logger.warn('ANTHROPIC_API_KEY not set, AI features will be limited');
     }
-    
+
     app.listen(PORT, () => {
       logger.info(`AI service started on port ${PORT}`);
     });
@@ -436,4 +455,4 @@ process.on('SIGINT', async () => {
 });
 
 // Start the server
-startServer(); 
+startServer();

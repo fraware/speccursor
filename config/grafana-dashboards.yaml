@@ -585,4 +585,4 @@ dashboards:
             color:
               mode: 'palette-classic'
             unit: 'bytes'
-          overrides: [] 
+          overrides: []

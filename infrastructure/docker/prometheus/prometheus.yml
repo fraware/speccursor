@@ -3,13 +3,13 @@ global:
   evaluation_interval: 15s
 
 rule_files:
-  - "rules/*.yml"
+  - 'rules/*.yml'
 
 alerting:
   alertmanagers:
     - static_configs:
         - targets:
-          - alertmanager:9093
+            - alertmanager:9093
 
 scrape_configs:
   # Prometheus itself
@@ -73,4 +73,4 @@ scrape_configs:
     static_configs:
       - targets: ['grafana:3000']
     metrics_path: '/metrics'
-    scrape_interval: 30s 
+    scrape_interval: 30s

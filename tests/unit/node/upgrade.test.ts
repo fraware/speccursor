@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { UpgradeService } from '../../../apps/github-app/src/services/upgrade';
 import { Database } from '../../../packages/shared-utils/src/index';
-import { Upgrade, Ecosystem, UpgradeStatus } from '../../../packages/shared-types/src/index';
+import {
+  Upgrade,
+  Ecosystem,
+  UpgradeStatus,
+} from '../../../packages/shared-types/src/index';
 
 // Mock dependencies
 jest.mock('../../../packages/shared-utils/src/index');
@@ -51,7 +55,13 @@ describe('UpgradeService', () => {
       expect(result.data).toEqual(mockUpgrade);
       expect(mockDatabase.query).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO upgrades'),
-        expect.arrayContaining(['test/repo', 'node', 'test-package', '1.0.0', '2.0.0'])
+        expect.arrayContaining([
+          'test/repo',
+          'node',
+          'test-package',
+          '1.0.0',
+          '2.0.0',
+        ])
       );
     });
 
@@ -200,7 +210,10 @@ describe('UpgradeService', () => {
     it('should update upgrade status successfully', async () => {
       mockDatabase.query.mockResolvedValue([{ updated_at: new Date() }]);
 
-      const result = await upgradeService.updateUpgradeStatus('test-id', UpgradeStatus.COMPLETED);
+      const result = await upgradeService.updateUpgradeStatus(
+        'test-id',
+        UpgradeStatus.COMPLETED
+      );
 
       expect(result.success).toBe(true);
       expect(mockDatabase.query).toHaveBeenCalledWith(
@@ -212,7 +225,10 @@ describe('UpgradeService', () => {
     it('should handle status update errors', async () => {
       mockDatabase.query.mockRejectedValue(new Error('Update failed'));
 
-      const result = await upgradeService.updateUpgradeStatus('test-id', UpgradeStatus.FAILED);
+      const result = await upgradeService.updateUpgradeStatus(
+        'test-id',
+        UpgradeStatus.FAILED
+      );
 
       expect(result.success).toBe(false);
       expect(result.error.message).toContain('Update failed');
@@ -294,4 +310,4 @@ describe('UpgradeService', () => {
       expect(health.database).toBe(false);
     });
   });
-}); 
+});

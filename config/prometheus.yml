@@ -6,13 +6,13 @@ global:
     environment: production
 
 rule_files:
-  - "rules/*.yml"
+  - 'rules/*.yml'
 
 alerting:
   alertmanagers:
     - static_configs:
         - targets:
-          - alertmanager:9093
+            - alertmanager:9093
 
 scrape_configs:
   # Prometheus itself
@@ -24,11 +24,11 @@ scrape_configs:
   - job_name: 'speccursor-services'
     static_configs:
       - targets:
-        - 'github-app:3000'
-        - 'controller:3001'
-        - 'ai-service:3002'
-        - 'rust-worker:8080'
-        - 'lean-engine:8081'
+          - 'github-app:3000'
+          - 'controller:3001'
+          - 'ai-service:3002'
+          - 'rust-worker:8080'
+          - 'lean-engine:8081'
     metrics_path: '/metrics'
     scrape_interval: 30s
     scrape_timeout: 10s
@@ -51,7 +51,8 @@ scrape_configs:
         action: replace
         target_label: __metrics_path__
         regex: (.+)
-      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+      - source_labels:
+          [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
         action: replace
         regex: ([^:]+)(?::\d+)?;(\d+)
         replacement: $1:$2
@@ -71,10 +72,12 @@ scrape_configs:
       - role: service
     metrics_path: /metrics
     relabel_configs:
-      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+      - source_labels:
+          [__meta_kubernetes_service_annotation_prometheus_io_scrape]
         action: keep
         regex: true
-      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+      - source_labels:
+          [__meta_kubernetes_service_annotation_prometheus_io_scheme]
         action: replace
         target_label: __scheme__
         regex: (https?)
@@ -82,7 +85,8 @@ scrape_configs:
         action: replace
         target_label: __metrics_path__
         regex: (.+)
-      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+      - source_labels:
+          [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
         action: replace
         regex: ([^:]+)(?::\d+)?;(\d+)
         replacement: $1:$2
@@ -150,13 +154,13 @@ scrape_configs:
       module: [http_2xx]
     static_configs:
       - targets:
-        - https://github.com
-        - https://api.anthropic.com
-        - https://api.morph.dev
+          - https://github.com
+          - https://api.anthropic.com
+          - https://api.morph.dev
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: blackbox:9115 
+        replacement: blackbox:9115

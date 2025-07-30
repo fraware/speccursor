@@ -2,10 +2,10 @@
 
 /**
  * SpecCursor Post-Patch Formal Re-Proof Script
- * 
+ *
  * This script regenerates Lean specifications after AI patches, re-proves changed theorems,
  * auto-opens blocking PR comments on proof failure, and exports proof timing metrics.
- * 
+ *
  * Usage:
  *   node scripts/post-patch-proof.ts --repository owner/repo --pr-number 123
  *   node scripts/post-patch-proof.ts --repository owner/repo --pr-number 123 --dry-run
@@ -19,13 +19,13 @@ import { readFile, writeFile, existsSync, mkdirSync } from 'fs/promises';
 import { join, dirname } from 'path';
 import { Logger, Metrics, ErrorHandler } from '@speccursor/shared-utils';
 import { ConfigManager } from '@speccursor/shared-config';
-import { 
-  ProofResult, 
-  TheoremStatus, 
+import {
+  ProofResult,
+  TheoremStatus,
   ProofMetrics,
   SpecCursorError,
   GitHubComment,
-  PRComment
+  PRComment,
 } from '@speccursor/shared-types';
 
 const execAsync = promisify(exec);
@@ -71,12 +71,12 @@ class PostPatchProofEngine {
     this.config = new ConfigManager();
     this.logger = new Logger('post-patch-proof');
     this.metrics = new Metrics();
-    
+
     // Initialize GitHub App authentication
     this.githubAppId = this.config.get('GITHUB_APP_ID') || '';
     this.githubPrivateKey = this.config.get('GITHUB_PRIVATE_KEY') || '';
     this.githubInstallationId = this.config.get('GITHUB_INSTALLATION_ID') || '';
-    
+
     if (!this.githubAppId || !this.githubPrivateKey) {
       throw new SpecCursorError('GitHub App credentials are required');
     }
@@ -108,16 +108,16 @@ class PostPatchProofEngine {
         maxProofTime: 0,
         minProofTime: 0,
         changedTheorems: 0,
-        unchangedTheorems: 0
+        unchangedTheorems: 0,
       },
       errors: [],
-      comments: []
+      comments: [],
     };
 
     this.logger.info('Starting post-patch formal re-proof', {
       repository: options.repository,
       prNumber: options.prNumber,
-      dryRun: options.dryRun
+      dryRun: options.dryRun,
     });
 
     try {
@@ -128,7 +128,10 @@ class PostPatchProofEngine {
       const changedTheorems = await this.identifyChangedTheorems(options);
 
       // Step 3: Re-prove changed theorems
-      const theoremResults = await this.reproveTheorems(changedTheorems, options);
+      const theoremResults = await this.reproveTheorems(
+        changedTheorems,
+        options
+      );
 
       // Step 4: Calculate metrics
       results.theorems = theoremResults;
@@ -147,20 +150,21 @@ class PostPatchProofEngine {
         totalTime,
         successfulProofs: results.metrics.successfulProofs,
         failedProofs: results.metrics.failedProofs,
-        totalProofs: results.metrics.totalProofs
+        totalProofs: results.metrics.totalProofs,
       });
 
       return results;
-
     } catch (error) {
       const totalTime = Date.now() - startTime;
       this.logger.error('Post-patch formal re-proof failed', {
         error: error instanceof Error ? error.message : String(error),
-        totalTime
+        totalTime,
       });
 
       results.success = false;
-      results.errors.push(error instanceof Error ? error.message : String(error));
+      results.errors.push(
+        error instanceof Error ? error.message : String(error)
+      );
       return results;
     }
   }
@@ -174,7 +178,9 @@ class PostPatchProofEngine {
     try {
       // Check if Lean project exists
       if (!existsSync('lakefile.lean')) {
-        this.logger.warn('No lakefile.lean found, skipping Lean spec regeneration');
+        this.logger.warn(
+          'No lakefile.lean found, skipping Lean spec regeneration'
+        );
         return;
       }
 
@@ -188,10 +194,9 @@ class PostPatchProofEngine {
 
       // Generate updated specifications
       await this.generateUpdatedSpecs();
-
     } catch (error) {
       this.logger.error('Failed to regenerate Lean specifications', {
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
@@ -344,10 +349,9 @@ def testUpdatedNodeLock2 : UpdatedNodePackageLock := {
       // Write updated specifications
       await writeFile('lean/speccursor_updated.lean', specContent);
       this.logger.info('Generated updated Lean specifications');
-
     } catch (error) {
       this.logger.error('Failed to generate updated specifications', {
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
@@ -356,7 +360,9 @@ def testUpdatedNodeLock2 : UpdatedNodePackageLock := {
   /**
    * Identify theorems that have changed due to AI patches
    */
-  private async identifyChangedTheorems(options: ProofOptions): Promise<string[]> {
+  private async identifyChangedTheorems(
+    options: ProofOptions
+  ): Promise<string[]> {
     this.logger.info('Identifying changed theorems');
 
     try {
@@ -365,13 +371,13 @@ def testUpdatedNodeLock2 : UpdatedNodePackageLock := {
       const { data: pr } = await this.octokit.pulls.get({
         owner,
         repo,
-        pull_number: options.prNumber
+        pull_number: options.prNumber,
       });
 
       const { data: files } = await this.octokit.pulls.listFiles({
         owner,
         repo,
-        pull_number: options.prNumber
+        pull_number: options.prNumber,
       });
 
       // Filter for Lean files that were changed
@@ -380,7 +386,7 @@ def testUpdatedNodeLock2 : UpdatedNodePackageLock := {
         .map(file => file.filename);
 
       this.logger.info(`Found ${changedLeanFiles.length} changed Lean files`, {
-        files: changedLeanFiles
+        files: changedLeanFiles,
       });
 
       // Extract theorem names from changed files
@@ -398,15 +404,17 @@ def testUpdatedNodeLock2 : UpdatedNodePackageLock := {
         }
       }
 
-      this.logger.info(`Identified ${changedTheorems.length} changed theorems`, {
-        theorems: changedTheorems
-      });
+      this.logger.info(
+        `Identified ${changedTheorems.length} changed theorems`,
+        {
+          theorems: changedTheorems,
+        }
+      );
 
       return changedTheorems;
-
     } catch (error) {
       this.logger.error('Failed to identify changed theorems', {
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
       return [];
     }
@@ -415,7 +423,10 @@ def testUpdatedNodeLock2 : UpdatedNodePackageLock := {
   /**
    * Re-prove changed theorems
    */
-  private async reproveTheorems(changedTheorems: string[], options: ProofOptions): Promise<TheoremResult[]> {
+  private async reproveTheorems(
+    changedTheorems: string[],
+    options: ProofOptions
+  ): Promise<TheoremResult[]> {
     const results: TheoremResult[] = [];
 
     this.logger.info(`Re-proving ${changedTheorems.length} changed theorems`);
@@ -436,16 +447,17 @@ def testUpdatedNodeLock2 : UpdatedNodePackageLock := {
         );
 
         proofTime = Date.now() - startTime;
-        
+
         if (stderr && stderr.includes('error')) {
           status = TheoremStatus.FAILED;
           error = stderr;
           this.logger.warn(`Theorem ${theorem} failed`, { error: stderr });
         } else {
           status = TheoremStatus.PROVED;
-          this.logger.info(`Theorem ${theorem} proved successfully`, { proofTime });
+          this.logger.info(`Theorem ${theorem} proved successfully`, {
+            proofTime,
+          });
         }
-
       } catch (error) {
         proofTime = Date.now() - startTime;
         status = TheoremStatus.FAILED;
@@ -460,7 +472,7 @@ def testUpdatedNodeLock2 : UpdatedNodePackageLock := {
         error,
         changed: true,
         file: 'lean/speccursor_updated.lean',
-        line: 0 // Would be calculated from actual file position
+        line: 0, // Would be calculated from actual file position
       });
     }
 
@@ -471,14 +483,19 @@ def testUpdatedNodeLock2 : UpdatedNodePackageLock := {
    * Calculate proof metrics
    */
   private calculateMetrics(theoremResults: TheoremResult[]): ProofMetrics {
-    const successfulProofs = theoremResults.filter(t => t.status === TheoremStatus.PROVED).length;
-    const failedProofs = theoremResults.filter(t => t.status === TheoremStatus.FAILED).length;
+    const successfulProofs = theoremResults.filter(
+      t => t.status === TheoremStatus.PROVED
+    ).length;
+    const failedProofs = theoremResults.filter(
+      t => t.status === TheoremStatus.FAILED
+    ).length;
     const changedTheorems = theoremResults.filter(t => t.changed).length;
     const unchangedTheorems = theoremResults.filter(t => !t.changed).length;
-    
+
     const proofTimes = theoremResults.map(t => t.proofTime).filter(t => t > 0);
     const totalProofTime = proofTimes.reduce((sum, time) => sum + time, 0);
-    const averageProofTime = proofTimes.length > 0 ? totalProofTime / proofTimes.length : 0;
+    const averageProofTime =
+      proofTimes.length > 0 ? totalProofTime / proofTimes.length : 0;
     const maxProofTime = proofTimes.length > 0 ? Math.max(...proofTimes) : 0;
     const minProofTime = proofTimes.length > 0 ? Math.min(...proofTimes) : 0;
 
@@ -491,28 +508,33 @@ def testUpdatedNodeLock2 : UpdatedNodePackageLock := {
       maxProofTime,
       minProofTime,
       changedTheorems,
-      unchangedTheorems
+      unchangedTheorems,
     };
   }
 
   /**
    * Generate PR comments for proof failures
    */
-  private async generatePRComments(results: ProofResult, options: ProofOptions): Promise<PRComment[]> {
+  private async generatePRComments(
+    results: ProofResult,
+    options: ProofOptions
+  ): Promise<PRComment[]> {
     const comments: PRComment[] = [];
 
     // Group failed theorems by file
-    const failedTheorems = results.theorems.filter(t => t.status === TheoremStatus.FAILED);
-    
+    const failedTheorems = results.theorems.filter(
+      t => t.status === TheoremStatus.FAILED
+    );
+
     if (failedTheorems.length === 0) {
       this.logger.info('No failed theorems, no comments needed');
       return comments;
     }
 
     // Create blocking comment for failed proofs
-    const failedTheoremList = failedTheorems.map(t => 
-      `- **${t.name}** (${t.file}:${t.line}): ${t.error}`
-    ).join('\n');
+    const failedTheoremList = failedTheorems
+      .map(t => `- **${t.name}** (${t.file}:${t.line}): ${t.error}`)
+      .join('\n');
 
     const blockingComment: PRComment = {
       body: `## 🔴 Formal Verification Failed
@@ -538,7 +560,7 @@ ${failedTheoremList}
 This PR is blocked until all formal proofs pass.`,
       path: 'lean/speccursor_updated.lean',
       line: 1,
-      position: 'top'
+      position: 'top',
     };
 
     comments.push(blockingComment);
@@ -557,13 +579,15 @@ This PR is blocked until all formal proofs pass.`,
 This theorem needs to be re-proved after the AI patches.`,
         path: theorem.file,
         line: theorem.line,
-        position: 'right'
+        position: 'right',
       };
 
       comments.push(individualComment);
     }
 
-    this.logger.info(`Generated ${comments.length} PR comments for failed proofs`);
+    this.logger.info(
+      `Generated ${comments.length} PR comments for failed proofs`
+    );
 
     return comments;
   }
@@ -578,8 +602,8 @@ This theorem needs to be re-proved after the AI patches.`,
         metrics,
         metadata: {
           version: '1.0.0',
-          source: 'post-patch-proof'
-        }
+          source: 'post-patch-proof',
+        },
       };
 
       // Ensure metrics directory exists
@@ -608,12 +632,11 @@ This theorem needs to be re-proved after the AI patches.`,
         totalProofs: metrics.totalProofs,
         successfulProofs: metrics.successfulProofs,
         failedProofs: metrics.failedProofs,
-        totalProofTime: metrics.totalProofTime
+        totalProofTime: metrics.totalProofTime,
       });
-
     } catch (error) {
       this.logger.error('Failed to export proof metrics', {
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }
@@ -631,7 +654,7 @@ async function main() {
     leanVersion: '4.20.0',
     mathlibVersion: 'latest',
     timeout: 300000, // 5 minutes
-    maxRetries: 3
+    maxRetries: 3,
   };
 
   // Parse command line arguments
@@ -710,12 +733,14 @@ Examples:
     if (result.success) {
       console.log('✅ Post-patch formal re-proof completed successfully');
       console.log(`📊 Metrics:`, result.metrics);
-      console.log(`🔍 Theorems: ${result.theorems.length} total, ${result.metrics.successfulProofs} successful, ${result.metrics.failedProofs} failed`);
-      
+      console.log(
+        `🔍 Theorems: ${result.theorems.length} total, ${result.metrics.successfulProofs} successful, ${result.metrics.failedProofs} failed`
+      );
+
       if (result.comments.length > 0) {
         console.log(`💬 Generated ${result.comments.length} PR comments`);
       }
-      
+
       if (result.errors.length > 0) {
         console.log(`⚠️  Warnings: ${result.errors.length} errors occurred`);
       }
@@ -725,7 +750,10 @@ Examples:
       process.exit(1);
     }
   } catch (error) {
-    console.error('❌ Fatal error:', error instanceof Error ? error.message : String(error));
+    console.error(
+      '❌ Fatal error:',
+      error instanceof Error ? error.message : String(error)
+    );
     process.exit(1);
   }
 }
@@ -738,4 +766,4 @@ if (require.main === module) {
   });
 }
 
-export { PostPatchProofEngine, ProofOptions, ProofResult }; 
+export { PostPatchProofEngine, ProofOptions, ProofResult };

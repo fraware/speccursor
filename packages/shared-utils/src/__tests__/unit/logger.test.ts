@@ -30,7 +30,7 @@ describe('Logger Utility Tests', () => {
   describe('createLogger', () => {
     it('should create a logger with default configuration', () => {
       const logger = createLogger();
-      
+
       expect(logger).toBeDefined();
       expect(typeof logger.info).toBe('function');
       expect(typeof logger.error).toBe('function');
@@ -43,15 +43,15 @@ describe('Logger Utility Tests', () => {
         service: 'test-service',
         logDir: '/tmp/logs',
       };
-      
+
       const logger = createLogger(config);
-      
+
       expect(logger).toBeDefined();
     });
 
     it('should handle missing configuration gracefully', () => {
       const logger = createLogger({});
-      
+
       expect(logger).toBeDefined();
     });
   });
@@ -60,36 +60,36 @@ describe('Logger Utility Tests', () => {
     it('should log info messages', () => {
       const logger = createLogger();
       const message = 'Test info message';
-      
+
       logger.info(message);
-      
+
       expect(logger.info).toHaveBeenCalledWith(message);
     });
 
     it('should log error messages', () => {
       const logger = createLogger();
       const message = 'Test error message';
-      
+
       logger.error(message);
-      
+
       expect(logger.error).toHaveBeenCalledWith(message);
     });
 
     it('should log warning messages', () => {
       const logger = createLogger();
       const message = 'Test warning message';
-      
+
       logger.warn(message);
-      
+
       expect(logger.warn).toHaveBeenCalledWith(message);
     });
 
     it('should log debug messages', () => {
       const logger = createLogger();
       const message = 'Test debug message';
-      
+
       logger.debug(message);
-      
+
       expect(logger.debug).toHaveBeenCalledWith(message);
     });
   });
@@ -98,18 +98,18 @@ describe('Logger Utility Tests', () => {
     it('should use environment variables for configuration', () => {
       process.env.LOG_LEVEL = 'debug';
       process.env.LOG_SERVICE = 'test-service';
-      
+
       const logger = createLogger();
-      
+
       expect(logger).toBeDefined();
     });
 
     it('should handle invalid log levels gracefully', () => {
       process.env.LOG_LEVEL = 'invalid-level';
-      
+
       const logger = createLogger();
-      
+
       expect(logger).toBeDefined();
     });
   });
-}); 
+});

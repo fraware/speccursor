@@ -316,11 +316,13 @@ leanchecker lean/speccursor.lean
 ### Debugging Tips
 
 1. **Run Tests Locally First**
+
    ```bash
    node scripts/run-ci-tests.js
    ```
 
 2. **Check Specific Stages**
+
    ```bash
    npm run test:unit
    npm run lint
@@ -328,6 +330,7 @@ leanchecker lean/speccursor.lean
    ```
 
 3. **Use Verbose Output**
+
    ```bash
    npm run test -- --verbose
    cargo test -- --nocapture
@@ -392,4 +395,4 @@ If you encounter issues with CI validation:
 4. Create an issue with detailed information
 5. Ask for help in the team chat
 
-Remember: **Green CI is everyone's responsibility!** 🚀 
+Remember: **Green CI is everyone's responsibility!** 🚀

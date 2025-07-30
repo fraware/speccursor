@@ -2,14 +2,14 @@ import dotenv from 'dotenv';
 import dotenvExpand from 'dotenv-expand';
 import convict from 'convict';
 import { z } from 'zod';
-import { 
-  AppConfig, 
-  DatabaseConfig, 
-  RedisConfig, 
-  ClaudeConfig, 
-  LeanConfig, 
-  SecurityConfig, 
-  MonitoringConfig 
+import {
+  AppConfig,
+  DatabaseConfig,
+  RedisConfig,
+  ClaudeConfig,
+  LeanConfig,
+  SecurityConfig,
+  MonitoringConfig,
 } from '@speccursor/shared-types';
 
 // ============================================================================
@@ -37,20 +37,20 @@ export const configSchema = convict({
       doc: 'The port the server should bind to',
       format: 'port',
       default: 3000,
-      env: 'PORT'
+      env: 'PORT',
     },
     environment: {
       doc: 'The application environment',
       format: ['development', 'staging', 'production'],
       default: 'development',
-      env: 'NODE_ENV'
+      env: 'NODE_ENV',
     },
     logLevel: {
       doc: 'The logging level',
       format: ['error', 'warn', 'info', 'debug'],
       default: 'info',
-      env: 'LOG_LEVEL'
-    }
+      env: 'LOG_LEVEL',
+    },
   },
 
   // Database
@@ -59,51 +59,51 @@ export const configSchema = convict({
       doc: 'Database host',
       format: String,
       default: 'localhost',
-      env: 'DB_HOST'
+      env: 'DB_HOST',
     },
     port: {
       doc: 'Database port',
       format: 'port',
       default: 5432,
-      env: 'DB_PORT'
+      env: 'DB_PORT',
     },
     name: {
       doc: 'Database name',
       format: String,
       default: 'speccursor',
-      env: 'DB_NAME'
+      env: 'DB_NAME',
     },
     username: {
       doc: 'Database username',
       format: String,
       default: 'speccursor',
-      env: 'DB_USER'
+      env: 'DB_USER',
     },
     password: {
       doc: 'Database password',
       format: String,
       default: 'speccursor_dev',
       sensitive: true,
-      env: 'DB_PASSWORD'
+      env: 'DB_PASSWORD',
     },
     ssl: {
       doc: 'Use SSL for database connection',
       format: Boolean,
       default: false,
-      env: 'DB_SSL'
+      env: 'DB_SSL',
     },
     maxConnections: {
       doc: 'Maximum database connections',
       format: 'int',
       default: 10,
-      env: 'DB_MAX_CONNECTIONS'
+      env: 'DB_MAX_CONNECTIONS',
     },
     idleTimeout: {
       doc: 'Database connection idle timeout in seconds',
       format: 'int',
       default: 300,
-      env: 'DB_IDLE_TIMEOUT'
-    }
+      env: 'DB_IDLE_TIMEOUT',
+    },
   },
 
   // Redis
@@ -112,33 +112,33 @@ export const configSchema = convict({
       doc: 'Redis host',
       format: String,
       default: 'localhost',
-      env: 'REDIS_HOST'
+      env: 'REDIS_HOST',
     },
     port: {
       doc: 'Redis port',
       format: 'port',
       default: 6379,
-      env: 'REDIS_PORT'
+      env: 'REDIS_PORT',
     },
     password: {
       doc: 'Redis password',
       format: String,
       default: null,
       sensitive: true,
-      env: 'REDIS_PASSWORD'
+      env: 'REDIS_PASSWORD',
     },
     db: {
       doc: 'Redis database number',
       format: 'int',
       default: 0,
-      env: 'REDIS_DB'
+      env: 'REDIS_DB',
     },
     keyPrefix: {
       doc: 'Redis key prefix',
       format: String,
       default: 'speccursor:',
-      env: 'REDIS_KEY_PREFIX'
-    }
+      env: 'REDIS_KEY_PREFIX',
+    },
   },
 
   // Claude AI
@@ -148,32 +148,32 @@ export const configSchema = convict({
       format: String,
       default: '',
       sensitive: true,
-      env: 'CLAUDE_API_KEY'
+      env: 'CLAUDE_API_KEY',
     },
     model: {
       doc: 'Claude model to use',
       format: String,
       default: 'claude-3-sonnet-20240229',
-      env: 'CLAUDE_MODEL'
+      env: 'CLAUDE_MODEL',
     },
     maxTokens: {
       doc: 'Maximum tokens for Claude requests',
       format: 'int',
       default: 4096,
-      env: 'CLAUDE_MAX_TOKENS'
+      env: 'CLAUDE_MAX_TOKENS',
     },
     temperature: {
       doc: 'Temperature for Claude requests',
       format: Number,
       default: 0.1,
-      env: 'CLAUDE_TEMPERATURE'
+      env: 'CLAUDE_TEMPERATURE',
     },
     timeout: {
       doc: 'Claude API timeout in milliseconds',
       format: 'int',
       default: 30000,
-      env: 'CLAUDE_TIMEOUT'
-    }
+      env: 'CLAUDE_TIMEOUT',
+    },
   },
 
   // Lean Engine
@@ -182,26 +182,26 @@ export const configSchema = convict({
       doc: 'Lean version to use',
       format: String,
       default: '4.20.0',
-      env: 'LEAN_VERSION'
+      env: 'LEAN_VERSION',
     },
     timeoutSeconds: {
       doc: 'Lean execution timeout in seconds',
       format: 'int',
       default: 300,
-      env: 'LEAN_TIMEOUT'
+      env: 'LEAN_TIMEOUT',
     },
     memoryLimitMb: {
       doc: 'Lean memory limit in MB',
       format: 'int',
       default: 2048,
-      env: 'LEAN_MEMORY_LIMIT'
+      env: 'LEAN_MEMORY_LIMIT',
     },
     mathlibPath: {
       doc: 'Path to Mathlib4',
       format: String,
       default: '/usr/local/lib/lean',
-      env: 'LEAN_MATHLIB_PATH'
-    }
+      env: 'LEAN_MATHLIB_PATH',
+    },
   },
 
   // Security
@@ -210,40 +210,40 @@ export const configSchema = convict({
       doc: 'Enable sandboxed execution',
       format: Boolean,
       default: true,
-      env: 'SANDBOX_ENABLED'
+      env: 'SANDBOX_ENABLED',
     },
     maxExecutionTime: {
       doc: 'Maximum execution time in seconds',
       format: 'int',
       default: 600,
-      env: 'MAX_EXECUTION_TIME'
+      env: 'MAX_EXECUTION_TIME',
     },
     memoryLimit: {
       doc: 'Memory limit for sandboxed processes',
       format: String,
       default: '2GB',
-      env: 'MEMORY_LIMIT'
+      env: 'MEMORY_LIMIT',
     },
     allowedCommands: {
       doc: 'Allowed commands in sandbox',
       format: Array,
       default: [],
-      env: 'ALLOWED_COMMANDS'
+      env: 'ALLOWED_COMMANDS',
     },
     jwtSecret: {
       doc: 'JWT secret for token signing',
       format: String,
       default: 'your-secret-key',
       sensitive: true,
-      env: 'JWT_SECRET'
+      env: 'JWT_SECRET',
     },
     webhookSecret: {
       doc: 'GitHub webhook secret',
       format: String,
       default: '',
       sensitive: true,
-      env: 'WEBHOOK_SECRET'
-    }
+      env: 'WEBHOOK_SECRET',
+    },
   },
 
   // Monitoring
@@ -252,26 +252,26 @@ export const configSchema = convict({
       doc: 'Enable metrics collection',
       format: Boolean,
       default: true,
-      env: 'METRICS_ENABLED'
+      env: 'METRICS_ENABLED',
     },
     tracingEnabled: {
       doc: 'Enable distributed tracing',
       format: Boolean,
       default: true,
-      env: 'TRACING_ENABLED'
+      env: 'TRACING_ENABLED',
     },
     prometheusPort: {
       doc: 'Prometheus metrics port',
       format: 'port',
       default: 9090,
-      env: 'PROMETHEUS_PORT'
+      env: 'PROMETHEUS_PORT',
     },
     jaegerEndpoint: {
       doc: 'Jaeger tracing endpoint',
       format: String,
       default: null,
-      env: 'JAEGER_ENDPOINT'
-    }
+      env: 'JAEGER_ENDPOINT',
+    },
   },
 
   // GitHub
@@ -280,23 +280,23 @@ export const configSchema = convict({
       doc: 'GitHub App ID',
       format: 'int',
       default: null,
-      env: 'GITHUB_APP_ID'
+      env: 'GITHUB_APP_ID',
     },
     privateKey: {
       doc: 'GitHub App private key',
       format: String,
       default: '',
       sensitive: true,
-      env: 'GITHUB_PRIVATE_KEY'
+      env: 'GITHUB_PRIVATE_KEY',
     },
     webhookSecret: {
       doc: 'GitHub webhook secret',
       format: String,
       default: '',
       sensitive: true,
-      env: 'GITHUB_WEBHOOK_SECRET'
-    }
-  }
+      env: 'GITHUB_WEBHOOK_SECRET',
+    },
+  },
 });
 
 // ============================================================================
@@ -377,14 +377,17 @@ export class ConfigManager {
   private validate(): void {
     try {
       this.config.validate({ allowed: 'strict' });
-      
+
       // Additional validation with Zod
       const configData = this.config.getProperties();
       configValidationSchema.parse(configData);
-      
+
       this.validated = true;
     } catch (error) {
       console.error('Configuration validation failed:', error);
+      if (process.env.NODE_ENV === 'test') {
+        throw error;
+      }
       process.exit(1);
     }
   }
@@ -544,7 +547,7 @@ export class ConfigManager {
 
 export function getEnvironmentConfig(): Record<string, any> {
   const env = process.env.NODE_ENV || 'development';
-  
+
   const baseConfig = {
     app: {
       port: 3000,
@@ -671,22 +674,24 @@ export function getEnvironmentConfig(): Record<string, any> {
 
 export function validateRequiredEnvVars(required: string[]): void {
   const missing: string[] = [];
-  
+
   for (const envVar of required) {
     if (!process.env[envVar]) {
       missing.push(envVar);
     }
   }
-  
+
   if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    throw new Error(
+      `Missing required environment variables: ${missing.join(', ')}`
+    );
   }
 }
 
 export function getServiceConfig(serviceName: string): Record<string, any> {
   const config = new ConfigManager();
   const baseConfig = config.getAppConfig();
-  
+
   return {
     ...baseConfig,
     service: serviceName,
@@ -698,4 +703,4 @@ export function getServiceConfig(serviceName: string): Record<string, any> {
 // Default Export
 // ============================================================================
 
-export default ConfigManager; 
+export default ConfigManager;

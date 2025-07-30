@@ -1,7 +1,10 @@
 import { describe, it, expect } from '@jest/globals';
 import * as fc from 'fast-check';
 import { UpgradeService } from '../../../../apps/github-app/src/services/upgrade';
-import { Ecosystem, UpgradeStatus } from '../../../../packages/shared-types/src/index';
+import {
+  Ecosystem,
+  UpgradeStatus,
+} from '../../../../packages/shared-types/src/index';
 
 describe('Go Upgrade Properties', () => {
   let upgradeService: UpgradeService;
@@ -16,31 +19,44 @@ describe('Go Upgrade Properties', () => {
       fc.assert(
         fc.property(
           // Generate valid Go semver version pairs where q > p
-          fc.tuple(
-            fc.stringMatching(/^v?\d+\.\d+\.\d+$/),
-            fc.stringMatching(/^v?\d+\.\d+\.\d+$/)
-          ).filter(([v1, v2]) => {
-            const normalizeVersion = (v: string) => {
-              return v.replace(/^v/, '').split('.').map(Number);
-            };
-            const [major1, minor1, patch1] = normalizeVersion(v1);
-            const [major2, minor2, patch2] = normalizeVersion(v2);
-            return major2 > major1 || (major2 === major1 && minor2 > minor1) || 
-                   (major2 === major1 && minor2 === minor1 && patch2 > patch1);
-          }),
+          fc
+            .tuple(
+              fc.stringMatching(/^v?\d+\.\d+\.\d+$/),
+              fc.stringMatching(/^v?\d+\.\d+\.\d+$/)
+            )
+            .filter(([v1, v2]) => {
+              const normalizeVersion = (v: string) => {
+                return v.replace(/^v/, '').split('.').map(Number);
+              };
+              const [major1, minor1, patch1] = normalizeVersion(v1);
+              const [major2, minor2, patch2] = normalizeVersion(v2);
+              return (
+                major2 > major1 ||
+                (major2 === major1 && minor2 > minor1) ||
+                (major2 === major1 && minor2 === minor1 && patch2 > patch1)
+              );
+            }),
           fc.string(),
           (versions, packageName) => {
             const [currentVersion, targetVersion] = versions;
-            
+
             // Test the invariant: if current version is compatible, target should be compatible
-            const currentCompatible = upgradeService.isCompatible(Ecosystem.GO, packageName, currentVersion);
-            const targetCompatible = upgradeService.isCompatible(Ecosystem.GO, packageName, targetVersion);
-            
+            const currentCompatible = upgradeService.isCompatible(
+              Ecosystem.GO,
+              packageName,
+              currentVersion
+            );
+            const targetCompatible = upgradeService.isCompatible(
+              Ecosystem.GO,
+              packageName,
+              targetVersion
+            );
+
             // The critical invariant: Upgrade p q → isCompatible p → isCompatible q
             if (currentCompatible) {
               expect(targetCompatible).toBe(true);
             }
-            
+
             return true;
           }
         ),
@@ -52,18 +68,23 @@ describe('Go Upgrade Properties', () => {
     it('should respect Go semver rules', () => {
       fc.assert(
         fc.property(
-          fc.tuple(
-            fc.stringMatching(/^v?\d+\.\d+\.\d+$/),
-            fc.stringMatching(/^v?\d+\.\d+\.\d+$/)
-          ).filter(([v1, v2]) => {
-            const normalizeVersion = (v: string) => {
-              return v.replace(/^v/, '').split('.').map(Number);
-            };
-            const [major1, minor1, patch1] = normalizeVersion(v1);
-            const [major2, minor2, patch2] = normalizeVersion(v2);
-            return major2 > major1 || (major2 === major1 && minor2 > minor1) || 
-                   (major2 === major1 && minor2 === minor1 && patch2 > patch1);
-          }),
+          fc
+            .tuple(
+              fc.stringMatching(/^v?\d+\.\d+\.\d+$/),
+              fc.stringMatching(/^v?\d+\.\d+\.\d+$/)
+            )
+            .filter(([v1, v2]) => {
+              const normalizeVersion = (v: string) => {
+                return v.replace(/^v/, '').split('.').map(Number);
+              };
+              const [major1, minor1, patch1] = normalizeVersion(v1);
+              const [major2, minor2, patch2] = normalizeVersion(v2);
+              return (
+                major2 > major1 ||
+                (major2 === major1 && minor2 > minor1) ||
+                (major2 === major1 && minor2 === minor1 && patch2 > patch1)
+              );
+            }),
           fc.string(),
           (versions, packageName) => {
             const [currentVersion, targetVersion] = versions;
@@ -72,11 +93,11 @@ describe('Go Upgrade Properties', () => {
             };
             const [major1, minor1, patch1] = normalizeVersion(currentVersion);
             const [major2, minor2, patch2] = normalizeVersion(targetVersion);
-            
+
             // Go semver: major version changes are breaking
             const isBreaking = major2 > major1;
             const isCompatible = major2 === major1;
-            
+
             const upgrade = upgradeService.createUpgrade({
               repository: 'test/repo',
               ecosystem: Ecosystem.GO,
@@ -84,7 +105,7 @@ describe('Go Upgrade Properties', () => {
               currentVersion,
               targetVersion,
             });
-            
+
             if (isBreaking) {
               // Breaking changes should be flagged
               expect(upgrade.breaking).toBe(true);
@@ -92,7 +113,7 @@ describe('Go Upgrade Properties', () => {
               // Compatible changes should not be breaking
               expect(upgrade.breaking).toBe(false);
             }
-            
+
             return true;
           }
         ),
@@ -111,15 +132,15 @@ describe('Go Upgrade Properties', () => {
             // Test go.mod dependency resolution
             const goMod = {
               module: moduleName,
-              go: "1.21",
+              go: '1.21',
               require: dependencies.map(dep => `${dep} ${version}`),
               replace: [],
-              exclude: []
+              exclude: [],
             };
-            
+
             const result = upgradeService.validateGoMod(goMod);
             expect(result.valid).toBe(true);
-            
+
             return true;
           }
         ),
@@ -133,18 +154,20 @@ describe('Go Upgrade Properties', () => {
     it('should maintain go.sum consistency', () => {
       fc.assert(
         fc.property(
-          fc.array(fc.tuple(fc.string(), fc.stringMatching(/^v?\d+\.\d+\.\d+$/))),
-          (dependencies) => {
+          fc.array(
+            fc.tuple(fc.string(), fc.stringMatching(/^v?\d+\.\d+\.\d+$/))
+          ),
+          dependencies => {
             const goSum = dependencies.map(([name, version]) => ({
               module: name,
               version: version,
-              hash: "h1:mockhash",
-              goModHash: "h1:mockgomodhash"
+              hash: 'h1:mockhash',
+              goModHash: 'h1:mockgomodhash',
             }));
-            
+
             const result = upgradeService.validateGoSum(goSum);
             expect(result.valid).toBe(true);
-            
+
             return true;
           }
         ),
@@ -164,9 +187,9 @@ describe('Go Upgrade Properties', () => {
               goVersion,
               packageVersion
             );
-            
+
             expect(typeof compatible).toBe('boolean');
-            
+
             return true;
           }
         ),
@@ -183,15 +206,15 @@ describe('Go Upgrade Properties', () => {
           (moduleName, packages) => {
             const goMod = {
               module: moduleName,
-              go: "1.21",
+              go: '1.21',
               require: packages.map(pkg => `${pkg} v1.0.0`),
               replace: [],
-              exclude: []
+              exclude: [],
             };
-            
+
             const result = upgradeService.validateGoModules(goMod);
             expect(result.valid).toBe(true);
-            
+
             return true;
           }
         ),
@@ -207,14 +230,14 @@ describe('Go Upgrade Properties', () => {
           fc.array(fc.string()),
           (workspaceName, modules) => {
             const goWork = {
-              go: "1.21",
+              go: '1.21',
               use: modules.map(module => `./${module}`),
-              replace: []
+              replace: [],
             };
-            
+
             const result = upgradeService.validateGoWorkspace(goWork);
             expect(result.valid).toBe(true);
-            
+
             return true;
           }
         ),
@@ -231,9 +254,13 @@ describe('Go Upgrade Properties', () => {
           fc.string().filter(s => !/^v?\d+\.\d+\.\d+$/.test(s)),
           fc.string(),
           (invalidVersion, packageName) => {
-            const result = upgradeService.isCompatible(Ecosystem.GO, packageName, invalidVersion);
+            const result = upgradeService.isCompatible(
+              Ecosystem.GO,
+              packageName,
+              invalidVersion
+            );
             expect(result).toBe(false);
-            
+
             return true;
           }
         ),
@@ -244,24 +271,20 @@ describe('Go Upgrade Properties', () => {
     // Property: Missing dependency handling
     it('should handle missing dependencies gracefully', () => {
       fc.assert(
-        fc.property(
-          fc.string(),
-          fc.string(),
-          (moduleName, missingDep) => {
-            const goMod = {
-              module: moduleName,
-              go: "1.21",
-              require: [],
-              replace: [],
-              exclude: []
-            };
-            
-            const result = upgradeService.validateGoMod(goMod);
-            expect(result.valid).toBe(true);
-            
-            return true;
-          }
-        ),
+        fc.property(fc.string(), fc.string(), (moduleName, missingDep) => {
+          const goMod = {
+            module: moduleName,
+            go: '1.21',
+            require: [],
+            replace: [],
+            exclude: [],
+          };
+
+          const result = upgradeService.validateGoMod(goMod);
+          expect(result.valid).toBe(true);
+
+          return true;
+        }),
         { numRuns: 500 }
       );
     });
@@ -272,23 +295,26 @@ describe('Go Upgrade Properties', () => {
     it('should handle large dependency graphs efficiently', () => {
       fc.assert(
         fc.property(
-          fc.array(fc.tuple(fc.string(), fc.stringMatching(/^v?\d+\.\d+\.\d+$/)), { minLength: 100, maxLength: 1000 }),
-          (largeDependencyList) => {
+          fc.array(
+            fc.tuple(fc.string(), fc.stringMatching(/^v?\d+\.\d+\.\d+$/)),
+            { minLength: 100, maxLength: 1000 }
+          ),
+          largeDependencyList => {
             const startTime = Date.now();
-            
+
             const goSum = largeDependencyList.map(([name, version]) => ({
               module: name,
               version: version,
-              hash: "h1:mockhash",
-              goModHash: "h1:mockgomodhash"
+              hash: 'h1:mockhash',
+              goModHash: 'h1:mockgomodhash',
             }));
-            
+
             const result = upgradeService.validateGoSum(goSum);
             const endTime = Date.now();
-            
+
             expect(result.valid).toBe(true);
             expect(endTime - startTime).toBeLessThan(1000); // Should complete within 1 second
-            
+
             return true;
           }
         ),
@@ -296,4 +322,4 @@ describe('Go Upgrade Properties', () => {
       );
     });
   });
-}); 
+});

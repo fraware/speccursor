@@ -66,4 +66,4 @@
     { "path": "./workers/rust-worker" },
     { "path": "./workers/lean-engine" }
   ]
-} 
+}

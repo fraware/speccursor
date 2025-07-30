@@ -17,7 +17,11 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
-    project: ['./tsconfig.json', './apps/*/tsconfig.json', './packages/*/tsconfig.json'],
+    project: [
+      './tsconfig.json',
+      './apps/*/tsconfig.json',
+      './packages/*/tsconfig.json',
+    ],
     tsconfigRootDir: __dirname,
   },
   plugins: ['@typescript-eslint', 'import', 'node'],
@@ -29,7 +33,7 @@ module.exports = {
     '@typescript-eslint/prefer-const': 'error',
     '@typescript-eslint/no-var-requires': 'error',
     '@typescript-eslint/consistent-type-imports': 'error',
-    
+
     // Import rules
     'import/order': [
       'error',
@@ -51,11 +55,11 @@ module.exports = {
     ],
     'import/no-unresolved': 'error',
     'import/no-cycle': 'error',
-    
+
     // Node.js rules
     'node/no-unsupported-features/es-syntax': 'off',
     'node/no-missing-import': 'off',
-    
+
     // General rules
     'no-console': 'warn',
     'no-debugger': 'error',
@@ -89,5 +93,41 @@ module.exports = {
         'no-console': 'off',
       },
     },
+    {
+      files: ['*.js', '**/*.config.js', '*rc.js', '**/*rc.js'],
+      env: {
+        node: true,
+        commonjs: true,
+      },
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'script',
+      },
+      rules: {
+        '@typescript-eslint/no-var-requires': 'off',
+        'no-undef': 'off',
+      },
+    },
+    {
+      files: ['load/**/*.js'],
+      env: {
+        es6: true,
+      },
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'module',
+      },
+      globals: {
+        __ENV: 'readonly',
+        __VU: 'readonly',
+        console: 'readonly',
+        textSummary: 'readonly',
+      },
+      rules: {
+        'no-console': 'off',
+        'no-undef': 'off',
+        '@typescript-eslint/no-var-requires': 'off',
+      },
+    },
   ],
-}; 
+};

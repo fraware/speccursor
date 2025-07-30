@@ -50,7 +50,12 @@ jest.mock('@anthropic-ai/sdk', () => ({
   default: jest.fn(() => ({
     messages: {
       create: jest.fn(() => ({
-        content: [{ type: 'text', text: '{"patchedCode": "test", "explanation": "test", "confidenceScore": 0.95}' }],
+        content: [
+          {
+            type: 'text',
+            text: '{"patchedCode": "test", "explanation": "test", "confidenceScore": 0.95}',
+          },
+        ],
       })),
     },
   })),
@@ -78,9 +83,7 @@ describe('AI Service Unit Tests', () => {
 
   describe('Health Check', () => {
     it('should return healthy status', async () => {
-      const response = await request(app)
-        .get('/health')
-        .expect(200);
+      const response = await request(app).get('/health').expect(200);
 
       expect(response.body).toHaveProperty('status', 'healthy');
       expect(response.body).toHaveProperty('service', 'ai-service');
@@ -132,9 +135,7 @@ describe('AI Service Unit Tests', () => {
     });
 
     it('should list patches', async () => {
-      const response = await request(app)
-        .get('/api/v1/patches')
-        .expect(200);
+      const response = await request(app).get('/api/v1/patches').expect(200);
 
       expect(response.body).toHaveProperty('patches');
       expect(response.body).toHaveProperty('pagination');
@@ -145,7 +146,12 @@ describe('AI Service Unit Tests', () => {
     it('should generate AI patch', async () => {
       const mockAnthropic = require('@anthropic-ai/sdk').default;
       const mockCreate = jest.fn(() => ({
-        content: [{ type: 'text', text: '{"patchedCode": "test", "explanation": "test", "confidenceScore": 0.95}' }],
+        content: [
+          {
+            type: 'text',
+            text: '{"patchedCode": "test", "explanation": "test", "confidenceScore": 0.95}',
+          },
+        ],
       }));
       mockAnthropic.mockImplementation(() => ({
         messages: {
@@ -172,7 +178,7 @@ describe('AI Service Unit Tests', () => {
   describe('Database Operations', () => {
     it('should connect to database', () => {
       const mockPool = require('pg').Pool;
-      
+
       expect(mockPool).toHaveBeenCalled();
     });
 
@@ -191,7 +197,7 @@ describe('AI Service Unit Tests', () => {
   describe('Redis Operations', () => {
     it('should connect to Redis', () => {
       const mockRedis = require('redis');
-      
+
       expect(mockRedis.createClient).toHaveBeenCalled();
     });
   });
@@ -216,22 +222,20 @@ describe('AI Service Unit Tests', () => {
   describe('Logging', () => {
     it('should log requests', () => {
       const mockLogger = createLogger();
-      
+
       expect(mockLogger.info).toBeDefined();
     });
 
     it('should log errors', () => {
       const mockLogger = createLogger();
-      
+
       expect(mockLogger.error).toBeDefined();
     });
   });
 
   describe('Metrics', () => {
     it('should expose metrics endpoint', async () => {
-      const response = await request(app)
-        .get('/metrics')
-        .expect(200);
+      const response = await request(app).get('/metrics').expect(200);
 
       expect(response.text).toContain('speccursor_');
     });
@@ -281,22 +285,22 @@ describe('AI Service Unit Tests', () => {
   describe('Configuration', () => {
     it('should load environment variables', () => {
       const mockDotenv = require('dotenv');
-      
+
       expect(mockDotenv.config).toHaveBeenCalled();
     });
 
     it('should use default port if not specified', () => {
       delete process.env.PORT;
-      
+
       // Test default port configuration
       expect(process.env.PORT).toBeUndefined();
     });
 
     it('should handle missing API key gracefully', () => {
       delete process.env.ANTHROPIC_API_KEY;
-      
+
       // Test missing API key handling
       expect(process.env.ANTHROPIC_API_KEY).toBeUndefined();
     });
   });
-}); 
+});

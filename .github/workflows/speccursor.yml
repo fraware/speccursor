@@ -2,7 +2,7 @@ name: SpecCursor CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
       - 'apps/**'
       - 'packages/**'
@@ -17,7 +17,7 @@ on:
       - 'requirements.txt'
       - 'Dockerfile'
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
       - 'apps/**'
       - 'packages/**'
@@ -32,7 +32,7 @@ on:
       - 'requirements.txt'
       - 'Dockerfile'
   release:
-    types: [ published ]
+    types: [published]
   workflow_dispatch:
     inputs:
       environment:
@@ -59,7 +59,7 @@ jobs:
     name: Code Quality & Security
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -580,20 +580,20 @@ jobs:
           release_name: Release v${{ github.run_number }}
           body: |
             ## SpecCursor Release v${{ github.run_number }}
-            
+
             ### Changes
             - Automated dependency upgrades
             - AI patch generation improvements
             - Formal verification enhancements
-            
+
             ### Artifacts
             - Docker images: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}`
             - SBOM files available in artifacts
-            
+
             ### Deployment
             - Staging: ✅ Deployed
             - Production: ✅ Deployed
-            
+
             ### Metrics
             - Build time: ${{ needs.build.result }}
             - Test coverage: Available in Codecov
@@ -605,7 +605,15 @@ jobs:
   notifications:
     name: Notifications
     runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, e2e-tests, build, deploy-staging, deploy-production]
+    needs:
+      [
+        unit-tests,
+        integration-tests,
+        e2e-tests,
+        build,
+        deploy-staging,
+        deploy-production,
+      ]
     if: always()
 
     steps:
@@ -646,7 +654,6 @@ jobs:
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
-
 # Required status checks for branch protection
 # These must pass before merging PRs to main/develop
-# Configure in repository settings > Branches > Branch protection rules 
+# Configure in repository settings > Branches > Branch protection rules

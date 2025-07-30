@@ -227,7 +227,7 @@
     },
     "per_upgrade": {
       "compute_usd": {
-        "max": 0.10
+        "max": 0.1
       },
       "ai_tokens_usd": {
         "max": 0.05
@@ -249,4 +249,4 @@
       "window": "30d"
     }
   }
-} 
+}

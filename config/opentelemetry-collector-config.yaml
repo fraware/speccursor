@@ -270,9 +270,9 @@ spec:
   service:
     metadata:
       annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9464"
-        prometheus.io/path: "/metrics"
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9464'
+        prometheus.io/path: '/metrics'
     spec:
       ports:
         - name: otlp-grpc
@@ -325,33 +325,33 @@ metadata:
     app.kubernetes.io/name: speccursor-collector
     app.kubernetes.io/part-of: speccursor
 rules:
-  - apiGroups: [""]
-    resources: ["pods", "services", "endpoints", "nodes"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["create", "patch"]
-  - apiGroups: ["autoscaling.k8s.io"]
-    resources: ["horizontalpodautoscalers"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["networking.k8s.io"]
-    resources: ["ingresses"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["networking.k8s.io"]
-    resources: ["networkpolicies"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["rbac.authorization.k8s.io"]
-    resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["coordination.k8s.io"]
-    resources: ["leases"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: [""]
-    resources: ["configmaps"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ['']
+    resources: ['pods', 'services', 'endpoints', 'nodes']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['']
+    resources: ['events']
+    verbs: ['create', 'patch']
+  - apiGroups: ['autoscaling.k8s.io']
+    resources: ['horizontalpodautoscalers']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['networking.k8s.io']
+    resources: ['ingresses']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['networking.k8s.io']
+    resources: ['networkpolicies']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['rbac.authorization.k8s.io']
+    resources: ['clusterroles', 'clusterrolebindings', 'roles', 'rolebindings']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['coordination.k8s.io']
+    resources: ['leases']
+    verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
+  - apiGroups: ['']
+    resources: ['configmaps']
+    verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
+  - apiGroups: ['']
+    resources: ['secrets']
+    verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -813,4 +813,4 @@ data:
           - key: user_agent
             description: "User agent"
           - key: result
-            description: "Action result" 
+            description: "Action result"

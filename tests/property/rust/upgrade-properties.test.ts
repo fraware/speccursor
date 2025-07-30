@@ -1,7 +1,10 @@
 import { describe, it, expect } from '@jest/globals';
 import * as fc from 'fast-check';
 import { UpgradeService } from '../../../../apps/github-app/src/services/upgrade';
-import { Ecosystem, UpgradeStatus } from '../../../../packages/shared-types/src/index';
+import {
+  Ecosystem,
+  UpgradeStatus,
+} from '../../../../packages/shared-types/src/index';
 
 describe('Rust Upgrade Properties', () => {
   let upgradeService: UpgradeService;
@@ -16,28 +19,41 @@ describe('Rust Upgrade Properties', () => {
       fc.assert(
         fc.property(
           // Generate valid semver version pairs where q > p
-          fc.tuple(
-            fc.stringMatching(/^\d+\.\d+\.\d+$/),
-            fc.stringMatching(/^\d+\.\d+\.\d+$/)
-          ).filter(([v1, v2]) => {
-            const [major1, minor1, patch1] = v1.split('.').map(Number);
-            const [major2, minor2, patch2] = v2.split('.').map(Number);
-            return major2 > major1 || (major2 === major1 && minor2 > minor1) || 
-                   (major2 === major1 && minor2 === minor1 && patch2 > patch1);
-          }),
+          fc
+            .tuple(
+              fc.stringMatching(/^\d+\.\d+\.\d+$/),
+              fc.stringMatching(/^\d+\.\d+\.\d+$/)
+            )
+            .filter(([v1, v2]) => {
+              const [major1, minor1, patch1] = v1.split('.').map(Number);
+              const [major2, minor2, patch2] = v2.split('.').map(Number);
+              return (
+                major2 > major1 ||
+                (major2 === major1 && minor2 > minor1) ||
+                (major2 === major1 && minor2 === minor1 && patch2 > patch1)
+              );
+            }),
           fc.string(),
           (versions, packageName) => {
             const [currentVersion, targetVersion] = versions;
-            
+
             // Test the invariant: if current version is compatible, target should be compatible
-            const currentCompatible = upgradeService.isCompatible(Ecosystem.RUST, packageName, currentVersion);
-            const targetCompatible = upgradeService.isCompatible(Ecosystem.RUST, packageName, targetVersion);
-            
+            const currentCompatible = upgradeService.isCompatible(
+              Ecosystem.RUST,
+              packageName,
+              currentVersion
+            );
+            const targetCompatible = upgradeService.isCompatible(
+              Ecosystem.RUST,
+              packageName,
+              targetVersion
+            );
+
             // The critical invariant: Upgrade p q → isCompatible p → isCompatible q
             if (currentCompatible) {
               expect(targetCompatible).toBe(true);
             }
-            
+
             return true;
           }
         ),
@@ -49,25 +65,34 @@ describe('Rust Upgrade Properties', () => {
     it('should respect Rust semver rules', () => {
       fc.assert(
         fc.property(
-          fc.tuple(
-            fc.stringMatching(/^\d+\.\d+\.\d+$/),
-            fc.stringMatching(/^\d+\.\d+\.\d+$/)
-          ).filter(([v1, v2]) => {
-            const [major1, minor1, patch1] = v1.split('.').map(Number);
-            const [major2, minor2, patch2] = v2.split('.').map(Number);
-            return major2 > major1 || (major2 === major1 && minor2 > minor1) || 
-                   (major2 === major1 && minor2 === minor1 && patch2 > patch1);
-          }),
+          fc
+            .tuple(
+              fc.stringMatching(/^\d+\.\d+\.\d+$/),
+              fc.stringMatching(/^\d+\.\d+\.\d+$/)
+            )
+            .filter(([v1, v2]) => {
+              const [major1, minor1, patch1] = v1.split('.').map(Number);
+              const [major2, minor2, patch2] = v2.split('.').map(Number);
+              return (
+                major2 > major1 ||
+                (major2 === major1 && minor2 > minor1) ||
+                (major2 === major1 && minor2 === minor1 && patch2 > patch1)
+              );
+            }),
           fc.string(),
           (versions, packageName) => {
             const [currentVersion, targetVersion] = versions;
-            const [major1, minor1, patch1] = currentVersion.split('.').map(Number);
-            const [major2, minor2, patch2] = targetVersion.split('.').map(Number);
-            
+            const [major1, minor1, patch1] = currentVersion
+              .split('.')
+              .map(Number);
+            const [major2, minor2, patch2] = targetVersion
+              .split('.')
+              .map(Number);
+
             // Rust semver: major version changes are breaking
             const isBreaking = major2 > major1;
             const isCompatible = major2 === major1;
-            
+
             const upgrade = upgradeService.createUpgrade({
               repository: 'test/repo',
               ecosystem: Ecosystem.RUST,
@@ -75,7 +100,7 @@ describe('Rust Upgrade Properties', () => {
               currentVersion,
               targetVersion,
             });
-            
+
             if (isBreaking) {
               // Breaking changes should be flagged
               expect(upgrade.breaking).toBe(true);
@@ -83,7 +108,7 @@ describe('Rust Upgrade Properties', () => {
               // Compatible changes should not be breaking
               expect(upgrade.breaking).toBe(false);
             }
-            
+
             return true;
           }
         ),
@@ -102,15 +127,18 @@ describe('Rust Upgrade Properties', () => {
             // Test Cargo.toml dependency resolution
             const cargoToml = {
               package: { name: packageName, version },
-              dependencies: dependencies.reduce((acc, dep) => {
-                acc[dep] = version;
-                return acc;
-              }, {} as Record<string, string>)
+              dependencies: dependencies.reduce(
+                (acc, dep) => {
+                  acc[dep] = version;
+                  return acc;
+                },
+                {} as Record<string, string>
+              ),
             };
-            
+
             const result = upgradeService.validateCargoToml(cargoToml);
             expect(result.valid).toBe(true);
-            
+
             return true;
           }
         ),
@@ -125,19 +153,19 @@ describe('Rust Upgrade Properties', () => {
       fc.assert(
         fc.property(
           fc.array(fc.tuple(fc.string(), fc.stringMatching(/^\d+\.\d+\.\d+$/))),
-          (dependencies) => {
+          dependencies => {
             const cargoLock = {
               version: 1,
               packages: dependencies.map(([name, version]) => ({
                 name,
                 version,
-                source: "registry+https://github.com/rust-lang/crates.io-index"
-              }))
+                source: 'registry+https://github.com/rust-lang/crates.io-index',
+              })),
             };
-            
+
             const result = upgradeService.validateCargoLock(cargoLock);
             expect(result.valid).toBe(true);
-            
+
             return true;
           }
         ),
@@ -157,9 +185,9 @@ describe('Rust Upgrade Properties', () => {
               rustVersion,
               packageVersion
             );
-            
+
             expect(typeof compatible).toBe('boolean');
-            
+
             return true;
           }
         ),
@@ -176,20 +204,26 @@ describe('Rust Upgrade Properties', () => {
           fc.array(fc.string()),
           (packageName, features, optionalDeps) => {
             const cargoToml = {
-              package: { name: packageName, version: "1.0.0" },
-              features: features.reduce((acc, feature) => {
-                acc[feature] = [];
-                return acc;
-              }, {} as Record<string, string[]>),
-              dependencies: optionalDeps.reduce((acc, dep) => {
-                acc[dep] = { optional: true };
-                return acc;
-              }, {} as Record<string, any>)
+              package: { name: packageName, version: '1.0.0' },
+              features: features.reduce(
+                (acc, feature) => {
+                  acc[feature] = [];
+                  return acc;
+                },
+                {} as Record<string, string[]>
+              ),
+              dependencies: optionalDeps.reduce(
+                (acc, dep) => {
+                  acc[dep] = { optional: true };
+                  return acc;
+                },
+                {} as Record<string, any>
+              ),
             };
-            
+
             const result = upgradeService.validateRustFeatures(cargoToml);
             expect(result.valid).toBe(true);
-            
+
             return true;
           }
         ),
@@ -206,9 +240,13 @@ describe('Rust Upgrade Properties', () => {
           fc.string().filter(s => !/^\d+\.\d+\.\d+$/.test(s)),
           fc.string(),
           (invalidVersion, packageName) => {
-            const result = upgradeService.isCompatible(Ecosystem.RUST, packageName, invalidVersion);
+            const result = upgradeService.isCompatible(
+              Ecosystem.RUST,
+              packageName,
+              invalidVersion
+            );
             expect(result).toBe(false);
-            
+
             return true;
           }
         ),
@@ -219,21 +257,17 @@ describe('Rust Upgrade Properties', () => {
     // Property: Missing dependency handling
     it('should handle missing dependencies gracefully', () => {
       fc.assert(
-        fc.property(
-          fc.string(),
-          fc.string(),
-          (packageName, missingDep) => {
-            const cargoToml = {
-              package: { name: packageName, version: "1.0.0" },
-              dependencies: {}
-            };
-            
-            const result = upgradeService.validateCargoToml(cargoToml);
-            expect(result.valid).toBe(true);
-            
-            return true;
-          }
-        ),
+        fc.property(fc.string(), fc.string(), (packageName, missingDep) => {
+          const cargoToml = {
+            package: { name: packageName, version: '1.0.0' },
+            dependencies: {},
+          };
+
+          const result = upgradeService.validateCargoToml(cargoToml);
+          expect(result.valid).toBe(true);
+
+          return true;
+        }),
         { numRuns: 500 }
       );
     });
@@ -244,25 +278,28 @@ describe('Rust Upgrade Properties', () => {
     it('should handle large dependency graphs efficiently', () => {
       fc.assert(
         fc.property(
-          fc.array(fc.tuple(fc.string(), fc.stringMatching(/^\d+\.\d+\.\d+$/)), { minLength: 100, maxLength: 1000 }),
-          (largeDependencyList) => {
+          fc.array(
+            fc.tuple(fc.string(), fc.stringMatching(/^\d+\.\d+\.\d+$/)),
+            { minLength: 100, maxLength: 1000 }
+          ),
+          largeDependencyList => {
             const startTime = Date.now();
-            
+
             const cargoLock = {
               version: 1,
               packages: largeDependencyList.map(([name, version]) => ({
                 name,
                 version,
-                source: "registry+https://github.com/rust-lang/crates.io-index"
-              }))
+                source: 'registry+https://github.com/rust-lang/crates.io-index',
+              })),
             };
-            
+
             const result = upgradeService.validateCargoLock(cargoLock);
             const endTime = Date.now();
-            
+
             expect(result.valid).toBe(true);
             expect(endTime - startTime).toBeLessThan(1000); // Should complete within 1 second
-            
+
             return true;
           }
         ),
@@ -270,4 +307,4 @@ describe('Rust Upgrade Properties', () => {
       );
     });
   });
-}); 
+});

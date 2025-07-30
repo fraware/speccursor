@@ -75,21 +75,21 @@ runs:
         if [ -f "package.json" ]; then
           pnpm install --frozen-lockfile
         fi
-        
+
         # Install Rust dependencies
         if [ -f "Cargo.toml" ]; then
           cargo fetch
         fi
-        
+
         # Install Python dependencies
         if [ -f "requirements.txt" ]; then
           pip install -r requirements.txt
         fi
-        
+
         if [ -f "pyproject.toml" ]; then
           pip install -e .
         fi
-        
+
         # Install Go dependencies
         if [ -f "go.mod" ]; then
           go mod download
@@ -99,22 +99,22 @@ runs:
       shell: bash
       run: |
         echo "Running initial test suite..."
-        
+
         # Node.js tests
         if [ -f "package.json" ]; then
           pnpm test || echo "Node.js tests failed"
         fi
-        
+
         # Rust tests
         if [ -f "Cargo.toml" ]; then
           cargo test || echo "Rust tests failed"
         fi
-        
+
         # Python tests
         if [ -f "pytest.ini" ] || [ -f "pyproject.toml" ]; then
           python -m pytest || echo "Python tests failed"
         fi
-        
+
         # Go tests
         if [ -f "go.mod" ]; then
           go test ./... || echo "Go tests failed"
@@ -124,10 +124,10 @@ runs:
       shell: bash
       run: |
         echo "Running dependency bump script..."
-        
+
         # Parse ecosystems input
         IFS=',' read -ra ECOSYSTEMS <<< "${{ inputs.ecosystems }}"
-        
+
         for ecosystem in "${ECOSYSTEMS[@]}"; do
           case $ecosystem in
             node)
@@ -169,22 +169,22 @@ runs:
       shell: bash
       run: |
         echo "Running test suite after dependency upgrades..."
-        
+
         # Node.js tests
         if [ -f "package.json" ]; then
           pnpm test || echo "Node.js tests failed after upgrade"
         fi
-        
+
         # Rust tests
         if [ -f "Cargo.toml" ]; then
           cargo test || echo "Rust tests failed after upgrade"
         fi
-        
+
         # Python tests
         if [ -f "pytest.ini" ] || [ -f "pyproject.toml" ]; then
           python -m pytest || echo "Python tests failed after upgrade"
         fi
-        
+
         # Go tests
         if [ -f "go.mod" ]; then
           go test ./... || echo "Go tests failed after upgrade"
@@ -195,10 +195,10 @@ runs:
       shell: bash
       run: |
         echo "Generating AI patches for failing tests..."
-        
+
         # This would call the AI patch generation script
         # node scripts/ai-patch.js --test-output test-results.json
-        
+
         echo "AI patch generation completed"
 
     - name: Run formal verification with Lean
@@ -206,17 +206,17 @@ runs:
       shell: bash
       run: |
         echo "Running formal verification with Lean..."
-        
+
         # Build Lean project
         if [ -f "lakefile.lean" ]; then
           lake build
         fi
-        
+
         # Run Lean tests
         if [ -f "lean/speccursor.lean" ]; then
           lake env lean --run lean/test_runner.lean
         fi
-        
+
         echo "Formal verification completed"
 
     - name: Run test suite after AI patches
@@ -224,22 +224,22 @@ runs:
       shell: bash
       run: |
         echo "Running test suite after AI patches..."
-        
+
         # Node.js tests
         if [ -f "package.json" ]; then
           pnpm test || echo "Node.js tests failed after AI patches"
         fi
-        
+
         # Rust tests
         if [ -f "Cargo.toml" ]; then
           cargo test || echo "Rust tests failed after AI patches"
         fi
-        
+
         # Python tests
         if [ -f "pytest.ini" ] || [ -f "pyproject.toml" ]; then
           python -m pytest || echo "Python tests failed after AI patches"
         fi
-        
+
         # Go tests
         if [ -f "go.mod" ]; then
           go test ./... || echo "Go tests failed after AI patches"
@@ -249,22 +249,22 @@ runs:
       shell: bash
       run: |
         echo "Generating coverage report..."
-        
+
         # Node.js coverage
         if [ -f "package.json" ]; then
           pnpm test:coverage || echo "Node.js coverage failed"
         fi
-        
+
         # Rust coverage
         if [ -f "Cargo.toml" ]; then
           cargo tarpaulin --out Html || echo "Rust coverage failed"
         fi
-        
+
         # Python coverage
         if [ -f "pytest.ini" ] || [ -f "pyproject.toml" ]; then
           python -m pytest --cov=. --cov-report=html || echo "Python coverage failed"
         fi
-        
+
         # Go coverage
         if [ -f "go.mod" ]; then
           go test -coverprofile=coverage.out ./... || echo "Go coverage failed"
@@ -275,10 +275,10 @@ runs:
       shell: bash
       run: |
         echo "Creating Pull Request..."
-        
+
         # This would use GitHub CLI or API to create PR
         # gh pr create --title "chore: upgrade dependencies" --body "Automated dependency upgrade by SpecCursor"
-        
+
         echo "Pull Request creation completed"
 
     - name: Upload artifacts
@@ -300,4 +300,4 @@ runs:
         echo "AI Patch: ${{ inputs.ai-patch }}"
         echo "Formal Proof: ${{ inputs.formal-proof }}"
         echo "Dry Run: ${{ inputs.dry-run }}"
-        echo "==========================================" 
+        echo "=========================================="

@@ -75,6 +75,7 @@ export enum Ecosystem {
   RUST = 'rust',
   PYTHON = 'python',
   GO = 'go',
+  LEAN = 'lean',
   DOCKERFILE = 'dockerfile',
 }
 
@@ -128,6 +129,13 @@ export enum PatchType {
   COMPATIBILITY = 'compatibility',
   SECURITY = 'security',
   PERFORMANCE = 'performance',
+}
+
+export enum MetricType {
+  COUNTER = 'counter',
+  GAUGE = 'gauge',
+  HISTOGRAM = 'histogram',
+  SUMMARY = 'summary',
 }
 
 // ============================================================================
@@ -207,7 +215,13 @@ export interface GitHubWebhookPayload {
 }
 
 export interface GitHubReleaseWebhook extends GitHubWebhookPayload {
-  action: 'published' | 'created' | 'edited' | 'deleted' | 'prereleased' | 'released';
+  action:
+    | 'published'
+    | 'created'
+    | 'edited'
+    | 'deleted'
+    | 'prereleased'
+    | 'released';
   release: {
     id: number;
     tag_name: string;
@@ -221,7 +235,15 @@ export interface GitHubReleaseWebhook extends GitHubWebhookPayload {
 }
 
 export interface GitHubPullRequestWebhook extends GitHubWebhookPayload {
-  action: 'opened' | 'edited' | 'closed' | 'reopened' | 'synchronize' | 'ready_for_review' | 'review_requested' | 'review_request_removed';
+  action:
+    | 'opened'
+    | 'edited'
+    | 'closed'
+    | 'reopened'
+    | 'synchronize'
+    | 'ready_for_review'
+    | 'review_requested'
+    | 'review_request_removed';
   pull_request: {
     id: number;
     number: number;
@@ -338,6 +360,115 @@ export const JobStatusSchema = z.nativeEnum(JobStatus);
 export const JobTypeSchema = z.nativeEnum(JobType);
 export const ProofTypeSchema = z.nativeEnum(ProofType);
 export const PatchTypeSchema = z.nativeEnum(PatchType);
+export const MetricTypeSchema = z.nativeEnum(MetricType);
+
+// Main entity schemas
+export const UpgradeSchema = z.object({
+  id: z.string().uuid(),
+  repository: z.string(),
+  ecosystem: EcosystemSchema,
+  packageName: z.string(),
+  currentVersion: z.string(),
+  targetVersion: z.string(),
+  status: UpgradeStatusSchema,
+  metadata: z.record(z.any()).nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  completedAt: z.string().datetime().nullable(),
+  errorMessage: z.string().nullable(),
+});
+
+export const ProofSchema = z.object({
+  id: z.string().uuid(),
+  upgradeId: z.string().uuid(),
+  proofType: ProofTypeSchema,
+  status: ProofStatusSchema,
+  leanCode: z.string().nullable(),
+  proofResult: z.record(z.any()).nullable(),
+  verificationTimeMs: z.number().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  completedAt: z.string().datetime().nullable(),
+  errorMessage: z.string().nullable(),
+});
+
+export const AIPatchSchema = z.object({
+  id: z.string().uuid(),
+  upgradeId: z.string().uuid(),
+  patchType: PatchTypeSchema,
+  status: PatchStatusSchema,
+  originalCode: z.string().nullable(),
+  patchedCode: z.string().nullable(),
+  diffOutput: z.string().nullable(),
+  confidenceScore: z.number().min(0).max(1).nullable(),
+  claudeRequest: z.record(z.any()).nullable(),
+  claudeResponse: z.record(z.any()).nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  completedAt: z.string().datetime().nullable(),
+  errorMessage: z.string().nullable(),
+});
+
+export const JobSchema = z.object({
+  id: z.string().uuid(),
+  type: JobTypeSchema,
+  status: JobStatusSchema,
+  priority: z.number().min(1).max(10),
+  data: z.record(z.any()),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  completedAt: z.string().datetime().nullable(),
+  errorMessage: z.string().nullable(),
+});
+
+export const MetricSchema = z.object({
+  name: z.string(),
+  value: z.number(),
+  type: MetricTypeSchema,
+  labels: z.record(z.string()),
+  timestamp: z.string().datetime(),
+});
+
+export const AuditLogSchema = z.object({
+  id: z.string().uuid(),
+  action: z.string(),
+  resourceType: z.string(),
+  resourceId: z.string(),
+  userId: z.string().nullable(),
+  metadata: z.record(z.any()),
+  timestamp: z.string().datetime(),
+  ipAddress: z.string().nullable(),
+  userAgent: z.string().nullable(),
+});
+
+export const SystemConfigSchema = z.object({
+  port: z.number(),
+  environment: z.string(),
+  database: z.object({
+    host: z.string(),
+    port: z.number(),
+    database: z.string(),
+    username: z.string(),
+    password: z.string(),
+    ssl: z.boolean(),
+    maxConnections: z.number(),
+    idleTimeout: z.number(),
+  }),
+  redis: z.object({
+    host: z.string(),
+    port: z.number(),
+    password: z.string().optional(),
+    db: z.number(),
+    keyPrefix: z.string(),
+  }),
+  monitoring: z.object({
+    metricsEnabled: z.boolean(),
+    tracingEnabled: z.boolean(),
+    logLevel: z.string(),
+    prometheusPort: z.number(),
+    jaegerEndpoint: z.string().optional(),
+  }),
+});
 
 export const CreateUpgradeRequestSchema = z.object({
   repository: z.string().min(1).max(255),
@@ -379,9 +510,11 @@ export const GitHubWebhookSchema = z.object({
     login: z.string(),
     type: z.string(),
   }),
-  installation: z.object({
-    id: z.number(),
-  }).optional(),
+  installation: z
+    .object({
+      id: z.number(),
+    })
+    .optional(),
 });
 
 // ============================================================================
@@ -432,7 +565,7 @@ export class RateLimitError extends SpecCursorError {
 // Utility Types
 // ============================================================================
 
-export type Result<T, E = SpecCursorError> = 
+export type Result<T, E = SpecCursorError> =
   | { success: true; data: T }
   | { success: false; error: E };
 
@@ -457,11 +590,14 @@ export interface HealthCheck {
   timestamp: Date;
   version: string;
   uptime: number;
-  checks: Record<string, {
-    status: 'healthy' | 'unhealthy';
-    message?: string;
-    duration?: number;
-  }>;
+  checks: Record<
+    string,
+    {
+      status: 'healthy' | 'unhealthy';
+      message?: string;
+      duration?: number;
+    }
+  >;
 }
 
 // ============================================================================
@@ -550,4 +686,4 @@ export interface AppConfig {
   lean: LeanConfig;
   security: SecurityConfig;
   monitoring: MonitoringConfig;
-} 
+}

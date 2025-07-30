@@ -41,9 +41,8 @@
     "uuid": "^9.0.1",
     "openai": "^4.20.0",
     "langchain": "^0.0.200",
-    "langchain-anthropic": "^0.0.1",
     "diff": "^5.1.0",
-    "jsdiff": "^5.1.0",
+    "jsdiff": "^1.1.1",
     "@speccursor/shared-types": "workspace:*",
     "@speccursor/shared-utils": "workspace:*",
     "@speccursor/shared-config": "workspace:*"
@@ -64,4 +63,4 @@
   "engines": {
     "node": ">=18.0.0"
   }
-} 
+}

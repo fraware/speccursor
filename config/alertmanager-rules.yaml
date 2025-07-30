@@ -27,8 +27,8 @@ spec:
             severity: warning
             team: speccursor
           annotations:
-            summary: "Upgrade failure rate is {{ $value | humanizePercentage }} above 7-day average"
-            description: "Upgrade failure rate is {{ $value | humanizePercentage }} above the 7-day average. Check recent upgrades for patterns."
+            summary: 'Upgrade failure rate is {{ $value | humanizePercentage }} above 7-day average'
+            description: 'Upgrade failure rate is {{ $value | humanizePercentage }} above the 7-day average. Check recent upgrades for patterns.'
 
         # AI Patch Generation Failure
         - alert: AIPatchGenerationFailure
@@ -40,8 +40,8 @@ spec:
             severity: warning
             team: speccursor
           annotations:
-            summary: "AI patch generation failure rate is {{ $value | humanizePercentage }}"
-            description: "AI patch generation is failing at {{ $value | humanizePercentage }} rate. Check Claude API status and token limits."
+            summary: 'AI patch generation failure rate is {{ $value | humanizePercentage }}'
+            description: 'AI patch generation is failing at {{ $value | humanizePercentage }} rate. Check Claude API status and token limits.'
 
         # Proof Verification Failure
         - alert: ProofVerificationFailure
@@ -53,8 +53,8 @@ spec:
             severity: warning
             team: speccursor
           annotations:
-            summary: "Proof verification failure rate is {{ $value | humanizePercentage }}"
-            description: "Lean proof verification is failing at {{ $value | humanizePercentage }} rate. Check Lean engine and theorem complexity."
+            summary: 'Proof verification failure rate is {{ $value | humanizePercentage }}'
+            description: 'Lean proof verification is failing at {{ $value | humanizePercentage }} rate. Check Lean engine and theorem complexity.'
 
         # High Response Time
         - alert: HighResponseTime
@@ -67,8 +67,8 @@ spec:
             severity: warning
             team: speccursor
           annotations:
-            summary: "P95 response time is {{ $value }}s"
-            description: "95th percentile response time is {{ $value }}s, which is above the 30s threshold."
+            summary: 'P95 response time is {{ $value }}s'
+            description: '95th percentile response time is {{ $value }}s, which is above the 30s threshold.'
 
         # Service Down
         - alert: ServiceDown
@@ -78,8 +78,8 @@ spec:
             severity: critical
             team: speccursor
           annotations:
-            summary: "Service {{ $labels.instance }} is down"
-            description: "Service {{ $labels.instance }} has been down for more than 1 minute."
+            summary: 'Service {{ $labels.instance }} is down'
+            description: 'Service {{ $labels.instance }} has been down for more than 1 minute.'
 
         # High CPU Usage
         - alert: HighCPUUsage
@@ -93,8 +93,8 @@ spec:
             severity: warning
             team: speccursor
           annotations:
-            summary: "CPU usage is {{ $value }}% for {{ $labels.container }}"
-            description: "Container {{ $labels.container }} is using {{ $value }}% CPU, which is above the 80% threshold."
+            summary: 'CPU usage is {{ $value }}% for {{ $labels.container }}'
+            description: 'Container {{ $labels.container }} is using {{ $value }}% CPU, which is above the 80% threshold.'
 
         # High Memory Usage
         - alert: HighMemoryUsage
@@ -108,8 +108,8 @@ spec:
             severity: warning
             team: speccursor
           annotations:
-            summary: "Memory usage is {{ $value }}% for {{ $labels.container }}"
-            description: "Container {{ $labels.container }} is using {{ $value }}% memory, which is above the 85% threshold."
+            summary: 'Memory usage is {{ $value }}% for {{ $labels.container }}'
+            description: 'Container {{ $labels.container }} is using {{ $value }}% memory, which is above the 85% threshold.'
 
         # High Disk Usage
         - alert: HighDiskUsage
@@ -123,8 +123,8 @@ spec:
             severity: warning
             team: speccursor
           annotations:
-            summary: "Disk usage is {{ $value }}% available"
-            description: "Only {{ $value }}% disk space is available, which is below the 10% threshold."
+            summary: 'Disk usage is {{ $value }}% available'
+            description: 'Only {{ $value }}% disk space is available, which is below the 10% threshold.'
 
         # Database Connection Pool Exhausted
         - alert: DatabaseConnectionPoolExhausted
@@ -134,8 +134,8 @@ spec:
             severity: warning
             team: speccursor
           annotations:
-            summary: "Database connection pool is {{ $value | humanizePercentage }} full"
-            description: "Database connection pool is {{ $value | humanizePercentage }} full, which may cause connection timeouts."
+            summary: 'Database connection pool is {{ $value | humanizePercentage }} full'
+            description: 'Database connection pool is {{ $value | humanizePercentage }} full, which may cause connection timeouts.'
 
         # Redis Memory Usage High
         - alert: RedisMemoryUsageHigh
@@ -145,8 +145,8 @@ spec:
             severity: warning
             team: speccursor
           annotations:
-            summary: "Redis memory usage is {{ $value }}%"
-            description: "Redis is using {{ $value }}% of available memory, which is above the 80% threshold."
+            summary: 'Redis memory usage is {{ $value }}%'
+            description: 'Redis is using {{ $value }}% of available memory, which is above the 80% threshold.'
 
         # Security Alerts
         - alert: WebhookSignatureFailures
@@ -156,8 +156,8 @@ spec:
             severity: critical
             team: speccursor
           annotations:
-            summary: "Webhook signature failures detected"
-            description: "{{ $value }} webhook signature failures per second detected. Possible security breach."
+            summary: 'Webhook signature failures detected'
+            description: '{{ $value }} webhook signature failures per second detected. Possible security breach.'
 
         - alert: APIAuthenticationFailures
           expr: rate(speccursor_api_auth_failures_total[5m]) > 1
@@ -166,8 +166,8 @@ spec:
             severity: critical
             team: speccursor
           annotations:
-            summary: "API authentication failures detected"
-            description: "{{ $value }} API authentication failures per second detected. Possible brute force attack."
+            summary: 'API authentication failures detected'
+            description: '{{ $value }} API authentication failures per second detected. Possible brute force attack.'
 
         - alert: SuspiciousActivity
           expr: rate(speccursor_suspicious_activity_total[5m]) > 0
@@ -176,8 +176,8 @@ spec:
             severity: critical
             team: speccursor
           annotations:
-            summary: "Suspicious activity detected"
-            description: "{{ $value }} suspicious activities per second detected. Immediate investigation required."
+            summary: 'Suspicious activity detected'
+            description: '{{ $value }} suspicious activities per second detected. Immediate investigation required.'
 
         # Business Metrics Alerts
         - alert: HighTokenUsage
@@ -187,8 +187,8 @@ spec:
             severity: warning
             team: speccursor
           annotations:
-            summary: "High Claude API token usage"
-            description: "Using {{ $value }} tokens per second, which is above the 1000 tokens/s threshold."
+            summary: 'High Claude API token usage'
+            description: 'Using {{ $value }} tokens per second, which is above the 1000 tokens/s threshold.'
 
         - alert: UpgradeQueueBacklog
           expr: speccursor_upgrade_queue_length > 100
@@ -197,8 +197,8 @@ spec:
             severity: warning
             team: speccursor
           annotations:
-            summary: "Upgrade queue backlog detected"
-            description: "{{ $value }} upgrades are queued, which is above the 100 threshold."
+            summary: 'Upgrade queue backlog detected'
+            description: '{{ $value }} upgrades are queued, which is above the 100 threshold.'
 
         # Infrastructure Alerts
         - alert: PodRestarting
@@ -208,8 +208,8 @@ spec:
             severity: warning
             team: speccursor
           annotations:
-            summary: "Pod {{ $labels.pod }} is restarting"
-            description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last 15 minutes."
+            summary: 'Pod {{ $labels.pod }} is restarting'
+            description: 'Pod {{ $labels.pod }} has restarted {{ $value }} times in the last 15 minutes.'
 
         - alert: NodeNotReady
           expr: kube_node_status_condition{condition="Ready",status="true"} == 0
@@ -218,8 +218,8 @@ spec:
             severity: critical
             team: speccursor
           annotations:
-            summary: "Node {{ $labels.node }} is not ready"
-            description: "Node {{ $labels.node }} has been not ready for more than 5 minutes."
+            summary: 'Node {{ $labels.node }} is not ready'
+            description: 'Node {{ $labels.node }} has been not ready for more than 5 minutes.'
 
         # External Dependency Alerts
         - alert: GitHubAPIDown
@@ -229,8 +229,8 @@ spec:
             severity: critical
             team: speccursor
           annotations:
-            summary: "GitHub API is down"
-            description: "GitHub API is not responding. This will affect webhook processing."
+            summary: 'GitHub API is down'
+            description: 'GitHub API is not responding. This will affect webhook processing.'
 
         - alert: ClaudeAPIDown
           expr: up{job="blackbox",instance="https://api.anthropic.com"} == 0
@@ -239,8 +239,8 @@ spec:
             severity: critical
             team: speccursor
           annotations:
-            summary: "Claude API is down"
-            description: "Claude API is not responding. This will affect AI patch generation."
+            summary: 'Claude API is down'
+            description: 'Claude API is not responding. This will affect AI patch generation.'
 
         - alert: MorphAPIDown
           expr: up{job="blackbox",instance="https://api.morph.dev"} == 0
@@ -249,8 +249,8 @@ spec:
             severity: critical
             team: speccursor
           annotations:
-            summary: "Morph API is down"
-            description: "Morph API is not responding. This will affect patch application."
+            summary: 'Morph API is down'
+            description: 'Morph API is not responding. This will affect patch application.'
 
 ---
 apiVersion: monitoring.coreos.com/v1alpha1
@@ -289,7 +289,7 @@ spec:
           component: monitoring
         receiver: 'ops-team'
         continue: true
-  
+
   receivers:
     - name: 'slack-notifications'
       slack_configs:
@@ -310,7 +310,7 @@ spec:
             - type: button
               text: 'View Runbook'
               url: '{{ .Annotations.runbook_url }}'
-    
+
     - name: 'slack-critical'
       slack_configs:
         - api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK'
@@ -329,7 +329,7 @@ spec:
             - type: button
               text: 'View Runbook'
               url: '{{ .Annotations.runbook_url }}'
-    
+
     - name: 'slack-warning'
       slack_configs:
         - api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK'
@@ -348,7 +348,7 @@ spec:
             - type: button
               text: 'View Runbook'
               url: '{{ .Annotations.runbook_url }}'
-    
+
     - name: 'security-team'
       slack_configs:
         - api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK'
@@ -367,7 +367,7 @@ spec:
             - type: button
               text: 'View Runbook'
               url: '{{ .Annotations.runbook_url }}'
-    
+
     - name: 'database-team'
       slack_configs:
         - api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK'
@@ -386,7 +386,7 @@ spec:
             - type: button
               text: 'View Runbook'
               url: '{{ .Annotations.runbook_url }}'
-    
+
     - name: 'ops-team'
       slack_configs:
         - api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK'
@@ -405,7 +405,7 @@ spec:
             - type: button
               text: 'View Runbook'
               url: '{{ .Annotations.runbook_url }}'
-    
+
     - name: 'email-notifications'
       email_configs:
         - to: 'speccursor-alerts@company.com'
@@ -426,7 +426,7 @@ spec:
             <p><a href="{{ .Annotations.runbook_url }}">View Runbook</a></p>
             {{ end }}
           send_resolved: true
-    
+
     - name: 'pager-duty'
       pagerduty_configs:
         - service_key: 'YOUR_PAGERDUTY_SERVICE_KEY'
@@ -442,7 +442,7 @@ spec:
             num_resolved: '{{ .Alerts.Resolved | len }}'
             resolved: '{{ template "pagerduty.default.description" . }}'
           send_resolved: true
-    
+
     - name: 'webhook'
       webhook_configs:
         - url: 'https://api.company.com/webhooks/speccursor-alerts'
@@ -480,7 +480,7 @@ data:
     {{ define "slack.speccursor.title" }}
     {{ if eq .Status "firing" }}🚨{{ else }}✅{{ end }} SpecCursor Alert
     {{ end }}
-    
+
     {{ define "slack.speccursor.text" }}
     {{ range .Alerts }}
     *Alert:* {{ .Annotations.summary }}
@@ -491,7 +491,7 @@ data:
     *Runbook:* {{ .Annotations.runbook_url }}
     {{ end }}
     {{ end }}
-  
+
   # Email template
   email.tmpl: |
     {{ define "email.speccursor.html" }}
@@ -532,7 +532,7 @@ data:
     </body>
     </html>
     {{ end }}
-    
+
     {{ define "email.speccursor.title" }}
     {{ if eq .Status "firing" }}🚨{{ else }}✅{{ end }} SpecCursor Alert
-    {{ end }} 
+    {{ end }}

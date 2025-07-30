@@ -16,22 +16,38 @@ export const options = {
     { duration: '2m', target: 0 }, // Ramp down to 0 VUs over 2 minutes
   ],
   thresholds: {
-    'upgrade_duration_seconds': ['p95<=3'], // 95th percentile should be ≤ 3 seconds
-    'upgrade_success_rate': ['rate>=0.999'], // Success rate should be ≥ 99.9%
-    'http_req_duration': ['p95<=2000'], // HTTP requests should be ≤ 2 seconds
-    'http_req_failed': ['rate<0.001'], // Error rate should be < 0.1%
-    'proof_latency_seconds': ['p95<=5'], // Proof verification should be ≤ 5 seconds
-    'ai_tokens_total': ['count<100000'], // Total AI tokens should be < 100k
+    upgrade_duration_seconds: ['p95<=3'], // 95th percentile should be ≤ 3 seconds
+    upgrade_success_rate: ['rate>=0.999'], // Success rate should be ≥ 99.9%
+    http_req_duration: ['p95<=2000'], // HTTP requests should be ≤ 2 seconds
+    http_req_failed: ['rate<0.001'], // Error rate should be < 0.1%
+    proof_latency_seconds: ['p95<=5'], // Proof verification should be ≤ 5 seconds
+    ai_tokens_total: ['count<100000'], // Total AI tokens should be < 100k
   },
 };
 
 // Test data
 const ecosystems = ['node', 'rust', 'python', 'go', 'dockerfile'];
 const packages = [
-  'express', 'react', 'lodash', 'axios', 'moment',
-  'serde', 'tokio', 'reqwest', 'clap', 'rand',
-  'requests', 'pandas', 'numpy', 'flask', 'django',
-  'gin', 'echo', 'cobra', 'viper', 'testify'
+  'express',
+  'react',
+  'lodash',
+  'axios',
+  'moment',
+  'serde',
+  'tokio',
+  'reqwest',
+  'clap',
+  'rand',
+  'requests',
+  'pandas',
+  'numpy',
+  'flask',
+  'django',
+  'gin',
+  'echo',
+  'cobra',
+  'viper',
+  'testify',
 ];
 
 // Helper functions
@@ -59,7 +75,7 @@ function generateTargetVersion(currentVersion) {
 }
 
 // Main test function
-export default function() {
+export default function () {
   const baseUrl = __ENV.K6_BROKER_URL || 'http://localhost:8080';
   const ecosystem = getRandomEcosystem();
   const packageName = getRandomPackage();
@@ -68,27 +84,31 @@ export default function() {
 
   // Step 1: Create upgrade
   const createStart = Date.now();
-  const createResponse = http.post(`${baseUrl}/api/v1/upgrades`, JSON.stringify({
-    repository: 'test/repo',
-    ecosystem: ecosystem,
-    packageName: packageName,
-    currentVersion: currentVersion,
-    targetVersion: targetVersion,
-    metadata: {
-      testRun: true,
-      loadTest: true,
-      timestamp: new Date().toISOString(),
+  const createResponse = http.post(
+    `${baseUrl}/api/v1/upgrades`,
+    JSON.stringify({
+      repository: 'test/repo',
+      ecosystem: ecosystem,
+      packageName: packageName,
+      currentVersion: currentVersion,
+      targetVersion: targetVersion,
+      metadata: {
+        testRun: true,
+        loadTest: true,
+        timestamp: new Date().toISOString(),
+      },
+    }),
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${__ENV.GITHUB_TOKEN || 'test-token'}`,
+      },
     }
-  }), {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${__ENV.GITHUB_TOKEN || 'test-token'}`,
-    },
-  });
+  );
 
   check(createResponse, {
-    'create upgrade status is 201': (r) => r.status === 201,
-    'create upgrade response has upgrade ID': (r) => r.json('id') !== undefined,
+    'create upgrade status is 201': r => r.status === 201,
+    'create upgrade response has upgrade ID': r => r.json('id') !== undefined,
   });
 
   const createDuration = (Date.now() - createStart) / 1000;
@@ -104,22 +124,28 @@ export default function() {
     let upgradeCompleted = false;
 
     while (attempts < maxAttempts && !upgradeCompleted) {
-      const statusResponse = http.get(`${baseUrl}/api/v1/upgrades/${upgradeId}`, {
-        headers: {
-          'Authorization': `Bearer ${__ENV.GITHUB_TOKEN || 'test-token'}`,
-        },
-      });
+      const statusResponse = http.get(
+        `${baseUrl}/api/v1/upgrades/${upgradeId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${__ENV.GITHUB_TOKEN || 'test-token'}`,
+          },
+        }
+      );
 
       check(statusResponse, {
-        'get upgrade status is 200': (r) => r.status === 200,
-        'upgrade status is valid': (r) => ['pending', 'processing', 'completed', 'failed'].includes(r.json('status')),
+        'get upgrade status is 200': r => r.status === 200,
+        'upgrade status is valid': r =>
+          ['pending', 'processing', 'completed', 'failed'].includes(
+            r.json('status')
+          ),
       });
 
       if (statusResponse.status === 200) {
         const status = statusResponse.json('status');
         if (status === 'completed' || status === 'failed') {
           upgradeCompleted = true;
-          
+
           // Record AI tokens if available
           const aiTokens = statusResponse.json('metadata.ai_tokens_used');
           if (aiTokens) {
@@ -127,7 +153,9 @@ export default function() {
           }
 
           // Record proof latency if available
-          const proofTime = statusResponse.json('metadata.proof_verification_time');
+          const proofTime = statusResponse.json(
+            'metadata.proof_verification_time'
+          );
           if (proofTime) {
             proofLatency.add(proofTime / 1000); // Convert to seconds
           }
@@ -145,50 +173,60 @@ export default function() {
     }
 
     // Step 3: Get upgrade details
-    const detailsResponse = http.get(`${baseUrl}/api/v1/upgrades/${upgradeId}/details`, {
-      headers: {
-        'Authorization': `Bearer ${__ENV.GITHUB_TOKEN || 'test-token'}`,
-      },
-    });
+    const detailsResponse = http.get(
+      `${baseUrl}/api/v1/upgrades/${upgradeId}/details`,
+      {
+        headers: {
+          Authorization: `Bearer ${__ENV.GITHUB_TOKEN || 'test-token'}`,
+        },
+      }
+    );
 
     check(detailsResponse, {
-      'get upgrade details is 200': (r) => r.status === 200,
-      'upgrade details has required fields': (r) => {
+      'get upgrade details is 200': r => r.status === 200,
+      'upgrade details has required fields': r => {
         const data = r.json();
         return data.id && data.repository && data.ecosystem && data.packageName;
       },
     });
 
     // Step 4: List upgrades (pagination test)
-    const listResponse = http.get(`${baseUrl}/api/v1/upgrades?limit=10&offset=0`, {
-      headers: {
-        'Authorization': `Bearer ${__ENV.GITHUB_TOKEN || 'test-token'}`,
-      },
-    });
+    const listResponse = http.get(
+      `${baseUrl}/api/v1/upgrades?limit=10&offset=0`,
+      {
+        headers: {
+          Authorization: `Bearer ${__ENV.GITHUB_TOKEN || 'test-token'}`,
+        },
+      }
+    );
 
     check(listResponse, {
-      'list upgrades is 200': (r) => r.status === 200,
-      'list upgrades has pagination': (r) => {
+      'list upgrades is 200': r => r.status === 200,
+      'list upgrades has pagination': r => {
         const data = r.json();
-        return data.upgrades && Array.isArray(data.upgrades) && 
-               data.total !== undefined && data.limit !== undefined;
+        return (
+          data.upgrades &&
+          Array.isArray(data.upgrades) &&
+          data.total !== undefined &&
+          data.limit !== undefined
+        );
       },
     });
 
     // Step 5: Health check
     const healthResponse = http.get(`${baseUrl}/health`);
     check(healthResponse, {
-      'health check is 200': (r) => r.status === 200,
-      'health check shows healthy': (r) => r.json('status') === 'healthy',
+      'health check is 200': r => r.status === 200,
+      'health check shows healthy': r => r.json('status') === 'healthy',
     });
 
     // Step 6: Metrics endpoint
     const metricsResponse = http.get(`${baseUrl}/metrics`);
     check(metricsResponse, {
-      'metrics endpoint is 200': (r) => r.status === 200,
-      'metrics contain upgrade metrics': (r) => r.body.includes('upgrade_duration_seconds'),
+      'metrics endpoint is 200': r => r.status === 200,
+      'metrics contain upgrade metrics': r =>
+        r.body.includes('upgrade_duration_seconds'),
     });
-
   } else {
     upgradeSuccessRate.add(0); // Mark as failed
   }
@@ -200,11 +238,12 @@ export default function() {
 // Setup function to initialize test data
 export function setup() {
   const baseUrl = __ENV.K6_BROKER_URL || 'http://localhost:8080';
-  
+
   // Verify the service is ready
   const healthResponse = http.get(`${baseUrl}/health`);
   check(healthResponse, {
-    'setup: service is healthy': (r) => r.status === 200 && r.json('status') === 'healthy',
+    'setup: service is healthy': r =>
+      r.status === 200 && r.json('status') === 'healthy',
   });
 
   console.log('Load test setup completed');
@@ -212,7 +251,7 @@ export function setup() {
 }
 
 // Teardown function to clean up
-export function teardown(data) {
+export function teardown() {
   console.log('Load test teardown completed');
 }
 
@@ -222,4 +261,4 @@ export function handleSummary(data) {
     'load-test-results.json': JSON.stringify(data, null, 2),
     stdout: textSummary(data, { indent: ' ', enableColors: true }),
   };
-} 
+}

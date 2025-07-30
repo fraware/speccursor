@@ -14,7 +14,6 @@ Thank you for your interest in contributing to SpecCursor! This document provide
 - [Release Process](#release-process)
 - [Support](#support)
 
-
 ## Getting Started
 
 ### Prerequisites
@@ -29,16 +28,19 @@ Thank you for your interest in contributing to SpecCursor! This document provide
 ### Development Setup
 
 1. **Fork and Clone**
+
    ```bash
    git clone https://github.com/fraware/speccursor.git
    ```
 
 2. **Install Dependencies**
+
    ```bash
    pnpm install
    ```
 
 3. **Start Development Environment**
+
    ```bash
    pnpm dev:up
    ```
@@ -116,7 +118,9 @@ export class GitHubAppService {
       await this.upgradeService.processUpgrade(payload);
     } catch (error) {
       this.logger.error('Failed to process webhook', { error });
-      throw new WebhookProcessingError('Webhook processing failed', { cause: error });
+      throw new WebhookProcessingError('Webhook processing failed', {
+        cause: error,
+      });
     }
   }
 }
@@ -148,7 +152,7 @@ pub struct WorkerPool {
 impl WorkerPool {
     pub async fn process_job(&self, job: Job) -> Result<JobResult> {
         info!("Processing job: {:?}", job.id);
-        
+
         match self.execute_job(job).await {
             Ok(result) => {
                 info!("Job completed successfully: {:?}", job.id);
@@ -178,7 +182,7 @@ import (
     "context"
     "fmt"
     "time"
-    
+
     "github.com/speccursor/speccursor/internal/types"
 )
 
@@ -192,15 +196,15 @@ type WorkerPool struct {
 func (wp *WorkerPool) ProcessJob(ctx context.Context, job *types.Job) (*types.JobResult, error) {
     ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
     defer cancel()
-    
+
     wp.logger.Info("Processing job", "job_id", job.ID)
-    
+
     result, err := wp.executeJob(ctx, job)
     if err != nil {
         wp.logger.Error("Job processing failed", "job_id", job.ID, "error", err)
         return nil, fmt.Errorf("failed to process job: %w", err)
     }
-    
+
     wp.logger.Info("Job completed successfully", "job_id", job.ID)
     return result, nil
 }
@@ -230,12 +234,12 @@ class JobResult:
 
 class WorkerPool:
     """Manages a pool of workers for processing jobs."""
-    
+
     def __init__(self, config: Dict[str, Any]) -> None:
         """Initialize the worker pool with configuration."""
         self.config = config
         self.logger = logging.getLogger(__name__)
-    
+
     def process_job(self, job: Dict[str, Any]) -> JobResult:
         """Process a single job with error handling."""
         try:
@@ -364,11 +368,13 @@ We use [Semantic Versioning](https://semver.org/):
 ### Release Steps
 
 1. **Create Release Branch**
+
    ```bash
    git checkout -b release/v1.0.0
    ```
 
 2. **Update Version**
+
    ```bash
    pnpm version patch  # or minor/major
    ```
