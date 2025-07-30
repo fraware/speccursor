@@ -1,7 +1,6 @@
 # SpecCursor
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://github.com/speccursor/speccursor/workflows/CI/badge.svg)](https://github.com/speccursor/speccursor/actions)
 [![Code Coverage](https://codecov.io/gh/speccursor/speccursor/branch/main/graph/badge.svg)](https://codecov.io/gh/speccursor/speccursor)
 [![Security](https://img.shields.io/badge/Security-Snyk-green.svg)](https://snyk.io/test/github/speccursor/speccursor)
 [![Docker](https://img.shields.io/badge/Docker-GHCR-blue.svg)](https://github.com/orgs/speccursor/packages)
