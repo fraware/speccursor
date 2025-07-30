@@ -61,9 +61,8 @@ flate2 = "1.0"
 base64 = "0.21"
 
 # HTTP server (for health checks)
-axum = "0.7"
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace"] }
+actix-web = "4.4"
+actix-rt = "2.9"
 
 # Testing
 mockall = "0.12"
