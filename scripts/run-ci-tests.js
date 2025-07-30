@@ -116,13 +116,13 @@ function checkDependencies() {
 function installDependencies() {
   logStep('Installing Dependencies');
 
-  // Install npm dependencies
-  const npmResult = runCommand('npm install');
-  if (!npmResult.success) {
-    logError('Failed to install npm dependencies');
+  // Install pnpm dependencies
+  const pnpmResult = runCommand('pnpm install');
+  if (!pnpmResult.success) {
+    logError('Failed to install pnpm dependencies');
     return false;
   }
-  logSuccess('npm dependencies installed');
+  logSuccess('pnpm dependencies installed');
 
   // Install Rust dependencies if Cargo.toml exists
   if (fs.existsSync('workers/rust-worker/Cargo.toml')) {
@@ -144,7 +144,7 @@ function runStaticAnalysis() {
 
   // ESLint
   logInfo('Running ESLint...');
-  const eslintResult = runCommand('npm run lint');
+  const eslintResult = runCommand('pnpm run lint');
   if (eslintResult.success) {
     logSuccess('ESLint passed');
   } else {
@@ -154,7 +154,7 @@ function runStaticAnalysis() {
 
   // TypeScript type check
   logInfo('Running TypeScript type check...');
-  const tscResult = runCommand('npm run type-check');
+  const tscResult = runCommand('pnpm run type-check');
   if (tscResult.success) {
     logSuccess('TypeScript type check passed');
   } else {
@@ -164,7 +164,7 @@ function runStaticAnalysis() {
 
   // Prettier check
   logInfo('Running Prettier check...');
-  const prettierResult = runCommand('npm run format:check');
+  const prettierResult = runCommand('pnpm run format:check');
   if (prettierResult.success) {
     logSuccess('Prettier check passed');
   } else {
@@ -207,7 +207,7 @@ function runUnitTests() {
   for (const pkg of packages) {
     if (fs.existsSync(path.join(pkg, 'package.json'))) {
       logInfo(`Running tests for ${pkg}...`);
-      const testResult = runCommand('npm run test:unit', pkg);
+      const testResult = runCommand('pnpm run test:unit', pkg);
       if (testResult.success) {
         logSuccess(`${pkg} tests passed`);
       } else {

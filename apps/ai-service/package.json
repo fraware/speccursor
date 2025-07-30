@@ -40,7 +40,6 @@
     "joi": "^17.11.0",
     "uuid": "^9.0.1",
     "openai": "^4.20.0",
-    "langchain": "^0.0.200",
     "diff": "^5.1.0",
     "jsdiff": "^1.1.1",
     "@speccursor/shared-types": "workspace:*",
